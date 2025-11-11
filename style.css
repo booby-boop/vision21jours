@@ -19,24 +19,27 @@ h1 {
 
 /* Container des jours */
 #days {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(7, 80px); /* 7 colonnes */
+  grid-template-rows: repeat(3, 80px);   /* 3 lignes */
   gap: 15px;
   justify-content: center;
+  text-align: center;
 }
 
 /* Chaque case */
 .dayBox { 
-  width: 60px; 
-  height: 60px; 
+  width: 80px; 
+  height: 80px; 
   background: #fff; 
   border-radius: 12px; 
-  text-align: center; 
-  line-height: 60px; 
-  cursor: pointer; 
-  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
   font-weight: 600;
   color: #2b2f5a; /* le texte “jour X” */
+  cursor: pointer;
 }
 
 /* Emoji menu */
