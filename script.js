@@ -8,7 +8,7 @@ let currentDayBox = null;
 for (let i = 1; i <= DAYS; i++) {
   const box = document.createElement('div');
   box.className = 'dayBox';
-  box.textContent = i;
+  box.textContent = `Jour ${i}`;
   box.addEventListener('click', () => {
     currentDayBox = box;
     emojiMenu.classList.remove('hidden');
