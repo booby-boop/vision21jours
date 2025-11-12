@@ -113,7 +113,7 @@ h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
 }
 
 .dayBox .mainContent { font-size:34px; line-height:1; }
-.dayBox .dateLabel { font-size:12px; line-height:1.1; color:#666; margin-top:4px; }
+.dayBox .dateLabel { font-size:12px; line-height:1.1; color:#1a1e3a; margin-top:4px; }
 
 .dayBox.selected{ box-shadow:0 6px 18px rgba(0,0,0,0.25); border:4px solid var(--gold); }
 .dayBox.colored{ color:#fff; }
