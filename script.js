@@ -2,8 +2,9 @@ const DAYS = 21;
 
 const startForm = document.getElementById('startForm');
 const startDateInput = document.getElementById('startDate');
-const daysGrid = document.getElementById('daysGrid');
+const dateError = document.getElementById('dateError');
 const generateBtn = document.getElementById('generateBtn');
+const daysGrid = document.getElementById('days');
 
 const useColorsCheckbox = document.getElementById('useColors');
 const useEmojisCheckbox = document.getElementById('useEmojis');
@@ -13,21 +14,15 @@ const emojiMenu = document.getElementById('emojiMenu');
 
 let currentBox = null;
 
-// Afficher les menus selon les cases cochées
-useColorsCheckbox.addEventListener('change', () => {
-  colorMenu.classList.toggle('hidden', !useColorsCheckbox.checked);
-});
-useEmojisCheckbox.addEventListener('change', () => {
-  emojiMenu.classList.toggle('hidden', !useEmojisCheckbox.checked);
-});
-
-// Génération de la grille
+// Générer / réinitialiser les 21 jours
 startForm.addEventListener('submit', (e) => {
   e.preventDefault();
 
   if (!startDateInput.value) {
-    alert("Merci de choisir une date de départ !");
+    dateError.style.display = 'block';
     return;
+  } else {
+    dateError.style.display = 'none';
   }
 
   // Si déjà généré, demander confirmation pour réinitialiser
@@ -53,6 +48,7 @@ startForm.addEventListener('submit', (e) => {
       if (useColorsCheckbox.checked) colorMenu.classList.remove('hidden');
       if (useEmojisCheckbox.checked) emojiMenu.classList.remove('hidden');
     });
+
     daysGrid.appendChild(dayBox);
   }
 
@@ -64,8 +60,10 @@ document.querySelectorAll('.colorBox').forEach(btn => {
   btn.addEventListener('click', () => {
     if (currentBox) {
       currentBox.style.backgroundColor = btn.style.backgroundColor;
-      currentBox.style.color = '#ffffff';
+      currentBox.style.color = '#fff';
     }
+    document.querySelectorAll('.colorBox').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
   });
 });
 
@@ -73,5 +71,7 @@ document.querySelectorAll('.colorBox').forEach(btn => {
 document.querySelectorAll('.emojiBox').forEach(btn => {
   btn.addEventListener('click', () => {
     if (currentBox) currentBox.textContent = btn.textContent;
+    document.querySelectorAll('.emojiBox').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
   });
 });
