@@ -42,6 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       onValueUpdate: function(fp) {
         fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(d => d.style.color = '#000');
+      },
+      onChange: function(selectedDates, dateStr, fp) {
+        startDateEl.value = dateStr; // applique la date
+        fp.close(); // ferme le calendrier automatiquement
       }
     });
   }
@@ -61,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
       box.style.fontSize = '34px';
       box.style.lineHeight = '1';
     } else {
-      box.style.fontSize = '14px'; // texte réduit de 10px
+      box.style.fontSize = '14px'; // texte réduit
       box.style.lineHeight = '1.1';
     }
     if (box.style.background && box.style.background !== 'white' && box.style.background !== '#ffffff') {
@@ -216,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // emoji input accepte maintenant tout caractère
+  // emoji input accepte maintenant tout caractère spécial
   emojiInputs.forEach(inp => {
     inp.addEventListener('input', (ev) => {
       if (currentDay) {
