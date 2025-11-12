@@ -17,35 +17,26 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentDay = null;
   let gridGenerated = false;
 
-  // flatpickr sur fond blanc
+  // flatpickr sur fond blanc et fermeture automatique
   if (typeof flatpickr === 'function') {
     flatpickr(startDateEl, {
       dateFormat: "d/m/Y",
       allowInput: true,
       defaultDate: null,
+      onClose: function(selectedDates, dateStr, fp) {
+        fp.close();
+      },
+      onChange: function(selectedDates, dateStr, fp) {
+        fp.close();
+      },
       onReady: function(selectedDates, dateStr, fp) {
         if (fp && fp.calendarContainer) {
           fp.calendarContainer.style.fontFamily = "Montserrat, sans-serif";
           fp.calendarContainer.style.borderRadius = "12px";
           fp.calendarContainer.style.border = "2px solid #c19751";
           fp.calendarContainer.style.background = "#fff"; // fond blanc
-          fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(d => {
-            d.style.color = '#000'; // texte noir
-          });
+          fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(d => d.style.color = '#000');
         }
-      },
-      onMonthChange: function(fp) {
-        fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(d => d.style.color = '#000');
-      },
-      onYearChange: function(fp) {
-        fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(d => d.style.color = '#000');
-      },
-      onValueUpdate: function(fp) {
-        fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(d => d.style.color = '#000');
-      },
-      onChange: function(selectedDates, dateStr, fp) {
-        startDateEl.value = dateStr; // applique la date
-        fp.close(); // ferme le calendrier automatiquement
       }
     });
   }
@@ -60,12 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function updateBoxAppearance(box) {
     const txt = (box.textContent || '').trim();
-    const isEmoji = txt.length > 0 && /[^\w\d\s]/u.test(txt); // accepte tout caractère spécial comme emoji
+    const isEmoji = txt.length > 0 && /[^\w\d\s]/u.test(txt);
     if (isEmoji) {
       box.style.fontSize = '34px';
       box.style.lineHeight = '1';
     } else {
-      box.style.fontSize = '14px'; // texte réduit
+      box.style.fontSize = '14px';
       box.style.lineHeight = '1.1';
     }
     if (box.style.background && box.style.background !== 'white' && box.style.background !== '#ffffff') {
@@ -117,6 +108,10 @@ document.addEventListener('DOMContentLoaded', () => {
     captureBtn.classList.remove('hidden');
     instructionP.classList.remove('hidden');
 
+    // désactive radios
+    radioEls.forEach(r => r.disabled = true);
+
+    // figer les inputs
     emojiInputs.forEach(i => i.disabled = true);
     colorPickers.forEach(p => p.disabled = true);
 
@@ -215,12 +210,13 @@ document.addEventListener('DOMContentLoaded', () => {
       captureBtn.classList.add('hidden');
       instructionP.classList.add('hidden');
       showEditors();
+      radioEls.forEach(r => r.disabled = false);
       emojiInputs.forEach(i => i.disabled = false);
       colorPickers.forEach(p => p.disabled = false);
     }
   });
 
-  // emoji input accepte maintenant tout caractère spécial
+  // emoji input accepte tous les caractères et emojis
   emojiInputs.forEach(inp => {
     inp.addEventListener('input', (ev) => {
       if (currentDay) {
