@@ -34,6 +34,8 @@ h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
 
 /* form */
 .config{ width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:12px; }
+
+/* date */
 .custom-date{
   width:260px;
   padding:11px 14px;
@@ -47,7 +49,7 @@ h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
 }
 .custom-date:focus{ box-shadow:0 0 0 6px rgba(193,151,81,0.14); border-color:var(--gold); }
 
-/* flatpickr */
+/* flatpickr overrides */
 .flatpickr-calendar { border-radius:12px; border:2px solid var(--gold); background:var(--bg); color:var(--white); }
 .flatpickr-day, .flatpickr-weekday { color:var(--white) !important; }
 .flatpickr-day.selected { background:var(--gold); color:var(--bg) !important; border-radius:50% !important; }
@@ -77,10 +79,10 @@ h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
 /* hints */
 .editor-hint{ font-size:13px; color:rgba(255,255,255,0.9); margin:0; }
 
-/* actions */
-.actions{ display:flex; gap:12px; margin-top:8px; }
-.primary{ background:var(--gold); color:var(--bg); border:none; padding:12px 18px; border-radius:12px; font-weight:600; font-size:16px; cursor:pointer; }
-.secondary{ background:transparent; color:var(--white); border:2px solid rgba(255,255,255,0.12); padding:10px 14px; border-radius:12px; cursor:pointer; }
+/* actions (Montserrat ensured) */
+.actions{ display:flex; gap:12px; margin-top:8px; font-family:"Montserrat",sans-serif; }
+.primary{ background:var(--gold); color:var(--bg); border:none; padding:12px 18px; border-radius:12px; font-weight:600; font-size:16px; cursor:pointer; font-family:"Montserrat",sans-serif; }
+.secondary{ background:transparent; color:var(--white); border:2px solid rgba(255,255,255,0.12); padding:10px 14px; border-radius:12px; cursor:pointer; font-family:"Montserrat",sans-serif; }
 
 /* instruction */
 .instruction{ margin-top:8px; color:rgba(255,255,255,0.85); font-size:14px; }
@@ -93,11 +95,12 @@ h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
 @media (min-width:720px){ .grid{ grid-template-columns: repeat(7, 88px); } }
 @media (max-width:719px){ .grid{ grid-template-columns: repeat(3, 88px); } }
 
+/* day box */
 .dayBox{
   width:88px; height:88px; border-radius:14px;
   background:var(--white); color:var(--dark);
   display:flex; align-items:center; justify-content:center;
-  font-weight:700; font-size:28px; cursor:pointer;
+  font-weight:700; cursor:pointer;
   border:3px solid rgba(255,255,255,0.12);
   box-shadow:0 2px 6px rgba(0,0,0,0.12);
   text-align:center; padding:6px; word-break:break-word;
@@ -108,5 +111,5 @@ h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
 /* colored */
 .dayBox.colored{ color:#fff; }
 
-/* small helpers */
+/* helpers */
 .hidden{ display:none !important; }
