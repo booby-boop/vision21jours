@@ -1,157 +1,194 @@
-/* Vision 21 Jours - fully integrated according to Claire's spec
-   Features:
-   - Flatpickr calendar (customized)
-   - Editable emoji inputs BEFORE generation (cursor visible)
-   - Color pickers stylized, rounded, no black border
+/* Final Vision 21 Jours - Claire Sulpice spec
+   - Flatpickr calendar (styled)
+   - Emoji inputs editable BEFORE generation (cursor visible)
+   - Color pickers styled, rounded, no inner black border
    - Generate 21-day grid (dates if provided, or "Jour X" if not)
-   - Click a day => selects it (gold liseré) and opens editor menu(s)
-   - Apply emoji or color to selected day
-   - After generation, editors can be disabled (grid content becomes "fixed")
-   - Download PDF (html2canvas + jsPDF)
-   - Responsive 7x3 desktop / 3x7 mobile
+   - Click a day => selects it (gold liseré)
+   - After generation: palettes are frozen (disabled) but can be used to assign values to days
+   - Save/load grid to localStorage until reset
+   - Capture grid as PNG via html2canvas
 */
 
 (() => {
   const DAYS = 21;
+  const LS_KEY = 'vision21_state_v1';
 
   // DOM
   const startDateEl = document.getElementById('startDate');
   const configForm = document.getElementById('configForm');
   const emojiEditor = document.getElementById('emojiEditor');
   const colorEditor = document.getElementById('colorEditor');
-  const daysContainer = document.getElementById('daysContainer') || document.getElementById('days');
+  const daysContainer = document.getElementById('daysContainer');
   const generateBtn = document.getElementById('generateBtn');
-  const downloadBtn = document.getElementById('downloadBtn');
+  const captureBtn = document.getElementById('captureBtn');
 
-  const radioModeEls = Array.from(document.querySelectorAll('input[name="mode"]'));
+  const radioModes = Array.from(document.querySelectorAll('input[name="mode"]'));
   const emojiInputs = Array.from(document.querySelectorAll('.emoji-input'));
-  const quickEmojiBtns = Array.from(document.querySelectorAll('.emoji-btn.quick'));
   const colorPickers = Array.from(document.querySelectorAll('.color-picker'));
 
   let currentDayBox = null;
-  let gridGenerated = false;
   let dayBoxes = [];
+  let gridGenerated = false;
 
-  /* ---------- Flatpickr init (calendar) ---------- */
-  flatpickr("#startDate", {
+  // Default palettes (if user doesn't change)
+  let EMOJIS = emojiInputs.map(i => i.value || '');
+  let COLORS = colorPickers.map(p => p.value || '#ffffff');
+
+  /* ---------- Flatpickr init ---------- */
+  flatpickr(startDateEl, {
     dateFormat: "d/m/Y",
     allowInput: true,
     defaultDate: null,
     onReady: function(selectedDates, dateStr, fp) {
-      // style the calendar container to match charte
       fp.calendarContainer.style.fontFamily = "Montserrat, sans-serif";
       fp.calendarContainer.style.borderRadius = "12px";
       fp.calendarContainer.style.border = "2px solid #c19751";
       fp.calendarContainer.style.background = "#2b2f5a";
       fp.calendarContainer.style.color = "#fff";
+      // style selected
+      fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(d => d.style.color = '#fff');
+    },
+    onOpen: function(selectedDates, dateStr, fp){
+      // set selection color to gold
+      fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(d => {
+        d.style.color = '#fff';
+      });
     }
   });
 
-  /* ---------- Helpers ---------- */
-  function showEditorsForMode() {
-    // determine mode
-    const mode = document.querySelector('input[name="mode"]:checked').value;
-    // show/hide editors accordingly
-    if (mode === 'emoji') {
-      emojiEditor.classList.remove('hidden'); colorEditor.classList.add('hidden');
-      emojiEditor.setAttribute('aria-hidden', 'false');
-      colorEditor.setAttribute('aria-hidden', 'true');
-    } else if (mode === 'color') {
-      colorEditor.classList.remove('hidden'); emojiEditor.classList.add('hidden');
-      colorEditor.setAttribute('aria-hidden', 'false');
-      emojiEditor.setAttribute('aria-hidden', 'true');
-    } else {
-      emojiEditor.classList.remove('hidden'); colorEditor.classList.remove('hidden');
-      emojiEditor.setAttribute('aria-hidden', 'false');
-      colorEditor.setAttribute('aria-hidden', 'false');
-    }
-    // center internal contents already via CSS flex/grid
+  /* ---------- Helpers: load/save localStorage ---------- */
+  function saveState() {
+    const state = {
+      startDate: startDateEl.value || null,
+      mode: document.querySelector('input[name="mode"]:checked').value,
+      emojis: emojiInputs.map(i => i.value || ''),
+      colors: colorPickers.map(p => p.value || ''),
+      days: dayBoxes.map(b => ({
+        label: b.dataset.label || null,
+        content: b.dataset.type === 'color' ? b.dataset.value : b.textContent,
+        type: b.dataset.type || null,
+        background: b.style.background || null
+      }))
+    };
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
   }
 
-  // radio change listeners
-  radioModeEls.forEach(radio => {
-    radio.addEventListener('change', showEditorsForMode);
-  });
-  // initialize editors visibility
+  function loadState() {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch(e){ return null; }
+  }
+
+  function clearState() { localStorage.removeItem(LS_KEY); }
+
+  /* ---------- Show/hide editors according to radio selection ---------- */
+  function showEditorsForMode() {
+    const mode = document.querySelector('input[name="mode"]:checked').value;
+    if (mode === 'emoji') {
+      emojiEditor.classList.remove('hidden'); colorEditor.classList.add('hidden');
+    } else if (mode === 'color') {
+      colorEditor.classList.remove('hidden'); emojiEditor.classList.add('hidden');
+    } else {
+      emojiEditor.classList.remove('hidden'); colorEditor.classList.remove('hidden');
+    }
+  }
+  radioModes.forEach(r => r.addEventListener('change', showEditorsForMode));
   showEditorsForMode();
 
   /* ---------- Emoji inputs: editable BEFORE generation ---------- */
-  // clicking quick emoji buttons copies the emoji into the currently focused emoji input (if any),
-  // or into the first input otherwise.
-  let focusedEmojiInput = null;
-  emojiInputs.forEach(inp => {
-    inp.addEventListener('focus', () => {
-      focusedEmojiInput = inp;
-      inp.classList.add('selected');
-    });
-    inp.addEventListener('blur', () => {
-      focusedEmojiInput = null;
-      inp.classList.remove('selected');
-    });
-    // live preview: if a day is selected, update it as the user types (before generation they want to preview)
+  emojiInputs.forEach((inp, idx) => {
     inp.addEventListener('input', () => {
-      if (currentDayBox && !currentDayBox.dataset.locked) {
-        const val = inp.value.trim() || '';
-        // put first emoji char or full string
-        currentDayBox.textContent = val || currentDayBox.dataset.label || '';
+      EMOJIS[idx] = inp.value;
+      // live preview: if a day selected and NOT locked, update it
+      if (currentDayBox && !currentDayBox.dataset.frozen) {
+        currentDayBox.textContent = inp.value || currentDayBox.dataset.label || '';
+        updateBoxAppearance(currentDayBox);
       }
+      saveState();
     });
-  });
-
-  quickEmojiBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const emoji = btn.textContent;
-      if (focusedEmojiInput) {
-        focusedEmojiInput.value = emoji;
-        focusedEmojiInput.dispatchEvent(new Event('input'));
-      } else {
-        // put into first input
-        emojiInputs[0].value = emoji;
-        emojiInputs[0].dispatchEvent(new Event('input'));
+    // allow Enter to apply too
+    inp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (currentDayBox && !currentDayBox.dataset.frozen) {
+          currentDayBox.textContent = inp.value || currentDayBox.dataset.label || '';
+          updateBoxAppearance(currentDayBox);
+          saveState();
+        }
       }
-      // quick visual feedback
-      quickEmojiBtns.forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      setTimeout(()=>btn.classList.remove('selected'), 300);
     });
   });
 
   /* ---------- Color pickers ---------- */
-  colorPickers.forEach(picker => {
-    // remove any native border artifacts for WebKit already via CSS; add selection visual
+  colorPickers.forEach((picker, idx) => {
     picker.addEventListener('input', () => {
-      // if a day is selected and not locked, apply color live
-      if (currentDayBox && !currentDayBox.dataset.locked) {
+      COLORS[idx] = picker.value;
+      // live preview if a day is selected and not frozen
+      if (currentDayBox && !currentDayBox.dataset.frozen) {
         currentDayBox.style.background = picker.value;
         currentDayBox.classList.add('colored');
-        // ensure contrast text white
-        currentDayBox.style.color = '#fff';
+        currentDayBox.dataset.type = 'color';
+        currentDayBox.dataset.value = picker.value;
+        updateBoxAppearance(currentDayBox);
+        saveState();
       }
-      // mark selection visual in editor
-      colorPickers.forEach(p => p.classList.remove('selected'));
-      picker.classList.add('selected');
     });
   });
 
-  /* ---------- Create grid function ---------- */
-  function generateGrid() {
+  /* ---------- Utility: detect if a string looks like an emoji (simple heuristic) ---------- */
+  function isEmoji(s) {
+    if (!s) return false;
+    // check for non-digit and length small
+    return /\p{Emoji}/u.test(s) || s.length <= 3 && /[^\w\d\s]/u.test(s);
+  }
+
+  function updateBoxAppearance(box) {
+    // if box has a background color set (style.background), mark colored
+    if (box.style.background && box.style.background !== 'white' && box.style.background !== '#ffffff') {
+      box.classList.add('colored');
+    } else {
+      box.classList.remove('colored');
+      box.style.color = '#2b2f5a';
+    }
+    // font-size: emoji big, dates smaller
+    const txt = (box.textContent || '').trim();
+    if (isEmoji(txt)) {
+      box.style.fontSize = '34px';
+      box.style.lineHeight = '1';
+      box.style.color = box.classList.contains('colored') ? '#fff' : '#2b2f5a';
+    } else {
+      box.style.fontSize = '14px';
+      box.style.lineHeight = '1.1';
+      box.style.color = box.classList.contains('colored') ? '#fff' : '#2b2f5a';
+    }
+  }
+
+  /* ---------- Generate grid ---------- */
+  function generateGrid(fromState) {
     daysContainer.innerHTML = '';
     dayBoxes = [];
-    const startDateVal = startDateEl.value;
-    const useDate = !!startDateVal;
+    const state = fromState || loadState();
     let startDateObj = null;
-    if (useDate) {
-      // flatpickr stores d/m/Y; but value may be in that format due to flatpickr. Try parse.
-      // Create date from yyyy-mm-dd if possible fallback
-      const parsed = startDateVal.includes('/') ? startDateVal.split('/').reverse().join('-') : startDateVal;
+    if (state && state.startDate) {
+      // try parse d/m/Y or ISO
+      const raw = state.startDate;
+      const parsed = raw.includes('/') ? raw.split('/').reverse().join('-') : raw;
       startDateObj = new Date(parsed);
       if (isNaN(startDateObj.getTime())) startDateObj = null;
+    } else {
+      // if input value present and no state
+      if (startDateEl.value) {
+        const raw = startDateEl.value;
+        const parsed = raw.includes('/') ? raw.split('/').reverse().join('-') : raw;
+        startDateObj = new Date(parsed);
+        if (isNaN(startDateObj.getTime())) startDateObj = null;
+      }
     }
 
     for (let i=0;i<DAYS;i++){
       const box = document.createElement('div');
       box.className = 'dayBox';
-      // default label: date or "Jour X"
+      // default label
       if (startDateObj) {
         const d = new Date(startDateObj.getTime() + i*24*60*60*1000);
         const label = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
@@ -164,123 +201,221 @@
         box.dataset.label = label;
       }
 
-      // clicking a day selects it and shows editors (unless locked)
-      box.addEventListener('click', (ev)=>{
-        // deselect previous
+      // If fromState has content for this day, restore
+      if (state && state.days && state.days[i]) {
+        const sd = state.days[i];
+        if (sd.type === 'color') {
+          box.style.background = sd.content;
+          box.dataset.type = 'color';
+          box.dataset.value = sd.content;
+        } else if (sd.type === 'emoji') {
+          box.textContent = sd.content;
+          box.dataset.type = 'emoji';
+        }
+      }
+
+      // click selects (and opens editors depending on mode), but after generation palettes are frozen (can't edit palette inputs)
+      box.addEventListener('click', () => {
+        // deselect others
         dayBoxes.forEach(b=>b.classList.remove('selected'));
         box.classList.add('selected');
         currentDayBox = box;
-        // show editors depending on mode and if not locked
-        if (!box.dataset.locked) {
-          const mode = document.querySelector('input[name="mode"]:checked').value;
-          if (mode === 'emoji') { emojiEditor.classList.remove('hidden'); colorEditor.classList.add('hidden'); }
-          else if (mode === 'color') { colorEditor.classList.remove('hidden'); emojiEditor.classList.add('hidden'); }
-          else { emojiEditor.classList.remove('hidden'); colorEditor.classList.remove('hidden'); }
-        } else {
-          // if locked, still highlight but don't allow editing
-          emojiEditor.classList.add('hidden');
+        // show editors only if mode allows and palettes are present; palette inputs are disabled after generation, but clicking a palette item applies it
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        if (mode === 'emoji') {
+          emojiEditor.classList.remove('hidden');
           colorEditor.classList.add('hidden');
+        } else if (mode === 'color') {
+          colorEditor.classList.remove('hidden');
+          emojiEditor.classList.add('hidden');
+        } else {
+          emojiEditor.classList.remove('hidden');
+          colorEditor.classList.remove('hidden');
         }
       });
 
       daysContainer.appendChild(box);
       dayBoxes.push(box);
+      updateBoxAppearance(box);
     }
     gridGenerated = true;
-    // show download button
-    downloadBtn.classList.remove('hidden');
-    // after grid creation the emoji inputs and color pickers remain available to apply to selected days
-    // but we will NOT disable them automatically — user wanted them fixed after finalization; we interpret that as:
-    // grid items are editable until user clicks "Réinitialiser" (which reloads page).
-    // To "lock" grid permanently, we could add a 'Finalize' flow; for now grid is editable post-generation.
+    captureBtn.classList.remove('hidden');
+    // Save current config/palettes
+    saveState();
   }
 
-  /* ---------- Apply emoji or color from editor inputs to current day ---------- */
-  // Apply from emoji inputs when user focuses an input and presses Enter
-  emojiInputs.forEach((inp, idx) => {
-    inp.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        if (currentDayBox && !currentDayBox.dataset.locked) {
-          currentDayBox.textContent = inp.value || currentDayBox.dataset.label || '';
-        }
-      }
+  /* ---------- Apply palette items to selected day (after generation) ---------- */
+  // Clicking an emoji input (not editing) should apply that emoji to selected day.
+  // To avoid confusion: after generation, palette inputs are disabled (so users cannot change palette),
+  // but clicking the visible palette boxes (we'll make small clickable overlays) will apply values.
+
+  // We'll create small clickable overlays for emoji palette and color palette (read-only after generation).
+  function createPaletteOverlays() {
+    // create overlays container under editors to show clickable palette after generation
+    // first remove existing overlays if any
+    const existing1 = document.getElementById('emojiPaletteOverlay');
+    if (existing1) existing1.remove();
+    const existing2 = document.getElementById('colorPaletteOverlay');
+    if (existing2) existing2.remove();
+
+    const emojiOverlay = document.createElement('div');
+    emojiOverlay.id = 'emojiPaletteOverlay';
+    emojiOverlay.className = 'editor-row';
+    emojiInputs.forEach((inp, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'emoji-btn quick-palette';
+      b.style.width = '68px';
+      b.style.height = '68px';
+      b.style.borderRadius = '12px';
+      b.style.border = '4px solid transparent';
+      b.style.fontSize = '34px';
+      b.textContent = inp.value || '';
+      b.addEventListener('click', () => {
+        if (!currentDayBox) return alert("Clique d'abord sur un jour.");
+        // apply emoji
+        currentDayBox.textContent = b.textContent || currentDayBox.dataset.label || '';
+        currentDayBox.dataset.type = 'emoji';
+        currentDayBox.dataset.value = b.textContent || '';
+        updateBoxAppearance(currentDayBox);
+        saveState();
+      });
+      emojiOverlay.appendChild(b);
     });
-  });
 
-  // Also add click handlers for quick emoji buttons (non-quick ones)
-  // Note: quick Emoji buttons already handled; if user clicks an emoji quick while a day is selected, apply it immediately
-  document.querySelectorAll('.emoji-btn:not(.quick)').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if (currentDayBox && !currentDayBox.dataset.locked) {
-        currentDayBox.textContent = btn.textContent;
-      }
+    const colorOverlay = document.createElement('div');
+    colorOverlay.id = 'colorPaletteOverlay';
+    colorOverlay.className = 'editor-row';
+    colorPickers.forEach((p, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'color-btn quick-palette';
+      b.style.width = '68px';
+      b.style.height = '68px';
+      b.style.borderRadius = '12px';
+      b.style.border = '4px solid transparent';
+      b.style.background = p.value;
+      b.addEventListener('click', () => {
+        if (!currentDayBox) return alert("Clique d'abord sur un jour.");
+        currentDayBox.style.background = p.value;
+        currentDayBox.classList.add('colored');
+        currentDayBox.dataset.type = 'color';
+        currentDayBox.dataset.value = p.value;
+        updateBoxAppearance(currentDayBox);
+        saveState();
+      });
+      colorOverlay.appendChild(b);
     });
-  });
 
-  // For color pickers: if user changes a picker and a day is selected, color applies (handled above in input listener)
+    // attach overlays below editors
+    emojiEditor.after(emojiOverlay);
+    colorEditor.after(colorOverlay);
+    // style overlays so selection border looks gold on hover/active via CSS (we rely on CSS class quick-palette)
+    // Make them visible after generation only
+    emojiOverlay.classList.add('hidden');
+    colorOverlay.classList.add('hidden');
+  }
 
-  /* ---------- Generate / Reset button behavior ---------- */
+  /* ---------- Toggle palette overlays visibility (frozen palette available to apply) ---------- */
+  function setPaletteOverlaysVisible(visible) {
+    const e = document.getElementById('emojiPaletteOverlay');
+    const c = document.getElementById('colorPaletteOverlay');
+    if (e) e.classList.toggle('hidden', !visible);
+    if (c) c.classList.toggle('hidden', !visible);
+  }
+
+  /* ---------- On form submit: generate or reset ---------- */
   configForm.addEventListener('submit', (ev) => {
     ev.preventDefault();
     if (!gridGenerated) {
-      // generate
-      generateGrid();
+      // freeze palettes: disable inputs so they can't be edited after generation
+      EMOJIS = emojiInputs.map(i=>i.value);
+      COLORS = colorPickers.map(p=>p.value);
+      // disable palette inputs to prevent editing after generation
+      emojiInputs.forEach(i => i.disabled = true);
+      colorPickers.forEach(p => p.disabled = true);
+      // generate grid
+      generateGrid({
+        startDate: startDateEl.value || null,
+        emojis: EMOJIS,
+        colors: COLORS
+      });
+      // create overlays and show them (palettes are now fixed and clickable)
+      createPaletteOverlays();
+      setPaletteOverlaysVisible(true);
+      // change button behavior to reset
       generateBtn.textContent = 'Réinitialiser';
-      // lock behavior: we will keep editors active so user can still apply emojis/colors to selection,
-      // but if you want grid to be fully "frozen" after creation, we can disable editors here.
-      // (User requested "Once grid generated, people should no longer be able to modify" in earlier message;
-      // you asked then to be editable before generation. We'll make it editable after generation too, but we can add a finalization.)
-      // For now, keep editable but you can request final freeze behavior.
+      // Save full state
+      saveState();
     } else {
-      // ask confirm reset
-      if (confirm("Es-tu sûr de vouloir réinitialiser ?")) {
-        // clear grid and state
-        daysContainer.innerHTML = '';
-        dayBoxes = [];
-        gridGenerated = false;
-        currentDayBox = null;
-        generateBtn.textContent = 'Générer les 21 jours';
-        downloadBtn.classList.add('hidden');
-        // keep editors visible as per mode
-        showEditorsForMode();
-      }
+      // reset flow: confirm
+      if (!confirm("Es-tu sûr de vouloir réinitialiser ta Vision 21 Jours ?")) return;
+      // clear everything
+      dayBoxes = [];
+      daysContainer.innerHTML = '';
+      gridGenerated = false;
+      currentDayBox = null;
+      generateBtn.textContent = 'Générer les 21 jours';
+      captureBtn.classList.add('hidden');
+      // enable palette inputs again
+      emojiInputs.forEach(i => { i.disabled = false; });
+      colorPickers.forEach(p => { p.disabled = false; });
+      // remove overlays
+      const emoO = document.getElementById('emojiPaletteOverlay');
+      if (emoO) emoO.remove();
+      const colO = document.getElementById('colorPaletteOverlay');
+      if (colO) colO.remove();
+      clearState();
+      showEditorsForMode();
     }
   });
 
-  /* ---------- Download PDF (html2canvas + jsPDF) ---------- */
-  downloadBtn.addEventListener('click', async () => {
-    if (!gridGenerated) return alert("Génère d'abord la grille avant de télécharger !");
-    // temporarily expand grid for better capture if on mobile? We'll capture as-is
-    // use html2canvas
+  /* ---------- Capture grid as PNG ---------- */
+  captureBtn.addEventListener('click', async () => {
+    if (!gridGenerated) return alert("Génère la grille d'abord.");
     try {
-      // highlight nothing
-      dayBoxes.forEach(b=>b.classList.remove('selected'));
-      // set background for container to white in canvas? we'll capture as is (dark BG + white boxes)
-      const elem = daysContainer;
-      const canvas = await html2canvas(elem, { backgroundColor: null, scale: 2, useCORS:true });
-      const imgData = canvas.toDataURL('image/png');
-
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'px',
-        format: [canvas.width, canvas.height]
-      });
-      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save('vision-21-jours.pdf');
+      // temporarily remove selection highlight for clean capture
+      dayBoxes.forEach(b => b.classList.remove('selected'));
+      // capture only the grid element
+      const canvas = await html2canvas(daysContainer, { backgroundColor: null, useCORS: true, scale: 2 });
+      const link = document.createElement('a');
+      link.download = 'vision-21-jours.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      // reapply nothing selected
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de la génération du PDF. Réessaie.");
+      alert("Erreur lors de la capture. Réessaie.");
     }
   });
 
-  /* ---------- Ensure editors centered internally (CSS handles centering) ---------- */
-  // No extra JS required.
-
-  /* ---------- Accessibility: handle window Resize to keep grid centered ---------- */
-  window.addEventListener('resize', () => {
-    // grid CSS automatically handles responsive columns
-  });
+  /* ---------- Load previous state on init (if present) ---------- */
+  (function initFromStorage(){
+    const st = loadState();
+    if (!st) return;
+    // restore palettes
+    if (st.emojis && st.emojis.length) {
+      emojiInputs.forEach((i, idx) => { if (st.emojis[idx]) i.value = st.emojis[idx]; });
+    }
+    if (st.colors && st.colors.length) {
+      colorPickers.forEach((p, idx) => { if (st.colors[idx]) p.value = st.colors[idx]; });
+    }
+    // restore selected mode
+    if (st.mode) {
+      const r = document.querySelector(`input[name="mode"][value="${st.mode}"]`);
+      if (r) r.checked = true;
+    }
+    showEditorsForMode();
+    // if there was a saved grid, regenerate it
+    if (st.days && st.days.length) {
+      // disable palette editing (palettes were already set earlier)
+      emojiInputs.forEach(i=>i.disabled=true);
+      colorPickers.forEach(p=>p.disabled=true);
+      generateGrid(st);
+      createPaletteOverlays();
+      setPaletteOverlaysVisible(true);
+      generateBtn.textContent = 'Réinitialiser';
+    }
+  })();
 
 })();
