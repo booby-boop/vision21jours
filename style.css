@@ -97,7 +97,7 @@ h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
   background:var(--white); color:var(--dark);
   display:flex; align-items:center; justify-content:center;
   font-weight:700;
-  font-size:8px; /* réduit de 18px -> 8px pour texte normal */
+  font-size: clamp(10px, 1.2vw, 18px); /* taille adaptative pour texte normal */
   cursor:pointer;
   border:3px solid rgba(255,255,255,0.12);
   box-shadow:0 2px 6px rgba(0,0,0,0.12);
@@ -109,7 +109,7 @@ h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
 /* colored */
 .dayBox.colored{ color:#fff; }
 
-/* augmenter la taille pour emoji dans la case */
+/* emojis */
 .dayBox[data-type="emoji"]{ font-size:34px; line-height:1; }
 
 .hidden{ display:none !important; }
