@@ -1,258 +1,92 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const DAYS = 21;
-  const startDateEl = document.getElementById('startDate');
-  const configForm = document.getElementById('configForm');
-  const emojiEditor = document.getElementById('emojiEditor');
-  const colorEditor = document.getElementById('colorEditor');
-  const daysContainer = document.getElementById('daysContainer');
-  const generateBtn = document.getElementById('generateBtn');
-  const captureBtn = document.getElementById('captureBtn');
+const emojis = ['😀','😅','😎','😍','😴'];
+const colors = ['#1d1d1b','#e6007e','#ffde00','#00a19a','#36a9e1'];
+let selectedEmojis = [];
+let selectedColors = [];
+let gridData = [];
+let choice = null;
 
-  const radioEls = Array.from(document.querySelectorAll('input[name="mode"]'));
-  const emojiInputs = Array.from(document.querySelectorAll('.emoji-input'));
-  const colorPickers = Array.from(document.querySelectorAll('.color-picker'));
+const paletteContainer = document.getElementById('paletteContainer');
+const startDateInput = document.getElementById('startDate');
+const gridContainer = document.getElementById('gridContainer');
+const instructionsText = document.getElementById('instructionsText');
 
-  let dayBoxes = [];
-  let currentDay = null;
-  let gridGenerated = false;
-
-  // Flatpickr init
-  if (typeof flatpickr === 'function') {
-    flatpickr(startDateEl, {
-      dateFormat: "d/m/Y",
-      allowInput: true,
-      defaultDate: null,
-      onReady: function(selectedDates, dateStr, fp) {
-        if (fp && fp.calendarContainer) {
-          fp.calendarContainer.style.fontFamily = "Montserrat, sans-serif";
-          fp.calendarContainer.style.borderRadius = "12px";
-          fp.calendarContainer.style.border = "2px solid #c19751";
-          fp.calendarContainer.style.background = "#2b2f5a";
-          fp.calendarContainer.style.color = "#fff";
-          fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(d => d.style.color = '#fff');
-        }
-      }
-    });
-  } else {
-    console.warn('flatpickr not loaded');
-  }
-
-  // show editors depending on radio
-  function showEditors() {
-    const mode = document.querySelector('input[name="mode"]:checked').value;
-    if (mode === 'emoji') {
-      emojiEditor.classList.remove('hidden');
-      colorEditor.classList.add('hidden');
-    } else if (mode === 'color') {
-      colorEditor.classList.remove('hidden');
-      emojiEditor.classList.add('hidden');
-    } else {
-      emojiEditor.classList.remove('hidden');
-      colorEditor.classList.remove('hidden');
-    }
-  }
-  radioEls.forEach(r => r.addEventListener('change', showEditors));
-  showEditors();
-
-  // helper to set box appearance (emoji bigger, date smaller ~ -10px)
-  function updateBoxAppearance(box) {
-    const txt = (box.textContent || '').trim();
-    const isEmoji = /\p{Emoji}/u.test(txt) || (txt.length <= 3 && /[^\w\d\s]/u.test(txt));
-    if (isEmoji) {
-      box.style.fontSize = '38px'; // same as palette
-      box.style.lineHeight = '1';
-    } else {
-      box.style.fontSize = '28px'; // date smaller (~10px less than emoji)
-      box.style.lineHeight = '1.1';
-    }
-    if (box.style.background && box.style.background !== 'white' && box.style.background !== '#ffffff') {
-      box.classList.add('colored');
-      box.style.color = '#fff';
-    } else {
-      box.classList.remove('colored');
-      box.style.color = '#1d1d1d';
-    }
-  }
-
-  // create grid
-  function createGrid() {
-    daysContainer.innerHTML = '';
-    dayBoxes = [];
-    const startRaw = startDateEl.value;
-    let startDate = null;
-    if (startRaw) {
-      if (startRaw.includes('/')) {
-        const parts = startRaw.split('/');
-        startDate = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-      } else {
-        startDate = new Date(startRaw);
-      }
-      if (isNaN(startDate.getTime())) startDate = null;
-    }
-
-    for (let i = 0; i < DAYS; i++) {
-      const box = document.createElement('div');
-      box.className = 'dayBox';
-      if (startDate) {
-        const d = new Date(startDate.getTime() + i * 24 * 3600 * 1000);
-        const label = d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-        box.textContent = label;
-        box.dataset.label = label;
-        box.dataset.date = d.toISOString();
-      } else {
-        const label = `Jour ${i + 1}`;
-        box.textContent = label;
-        box.dataset.label = label;
-      }
-
-      box.addEventListener('click', () => {
-        dayBoxes.forEach(b => b.classList.remove('selected'));
-        box.classList.add('selected');
-        currentDay = box;
-      });
-
-      daysContainer.appendChild(box);
-      dayBoxes.push(box);
-      updateBoxAppearance(box);
-    }
-
-    gridGenerated = true;
-    captureBtn.classList.remove('hidden');
-
-    // freeze palette inputs and replace editors by overlays to avoid visual duplication
-    emojiInputs.forEach(i => i.disabled = true);
-    colorPickers.forEach(p => p.disabled = true);
-
-    createPaletteOverlays();
-  }
-
-  // create palette overlays (apply-only)
-  function createPaletteOverlays() {
-    // remove existing overlays
-    const existingEmojiOverlay = document.getElementById('emojiPaletteOverlay');
-    if (existingEmojiOverlay) existingEmojiOverlay.remove();
-    const existingColorOverlay = document.getElementById('colorPaletteOverlay');
-    if (existingColorOverlay) existingColorOverlay.remove();
-
-    // emoji overlay
-    const emojiOverlay = document.createElement('div');
-    emojiOverlay.id = 'emojiPaletteOverlay';
-    emojiOverlay.className = 'editor-row';
-    emojiInputs.forEach(inp => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'emoji-btn quick-palette';
-      b.style.width = '68px';
-      b.style.height = '68px';
-      b.style.borderRadius = '12px';
-      b.style.border = '4px solid transparent';
-      b.style.fontSize = '38px';
-      b.textContent = inp.value || '';
-      b.addEventListener('click', () => {
-        if (!currentDay) { alert('Clique d\'abord sur un jour.'); return; }
-        currentDay.textContent = b.textContent || currentDay.dataset.label || '';
-        currentDay.dataset.type = 'emoji';
-        currentDay.dataset.value = b.textContent || '';
-        updateBoxAppearance(currentDay);
-      });
-      emojiOverlay.appendChild(b);
-    });
-
-    // color overlay
-    const colorOverlay = document.createElement('div');
-    colorOverlay.id = 'colorPaletteOverlay';
-    colorOverlay.className = 'editor-row';
-    colorPickers.forEach(p => {
-      const b = document.createElement('button');
-      b.type = 'button';
-      b.className = 'color-btn quick-palette';
-      b.style.width = '68px';
-      b.style.height = '68px';
-      b.style.borderRadius = '12px';
-      b.style.border = '4px solid transparent';
-      b.style.background = p.value;
-      b.addEventListener('click', () => {
-        if (!currentDay) { alert('Clique d\'abord sur un jour.'); return; }
-        currentDay.style.background = p.value;
-        currentDay.dataset.type = 'color';
-        currentDay.dataset.value = p.value;
-        updateBoxAppearance(currentDay);
-      });
-      colorOverlay.appendChild(b);
-    });
-
-    // place overlays: replace editable editors visually (hide editors and insert overlays)
-    emojiEditor.classList.add('hidden');
-    colorEditor.classList.add('hidden');
-
-    // insert overlays where editors were (after the form)
-    configForm.parentNode.insertBefore(emojiOverlay, daysContainer);
-    configForm.parentNode.insertBefore(colorOverlay, daysContainer);
-  }
-
-  // capture grid
-  async function captureGrid() {
-    if (!gridGenerated) return alert('Génère la grille d\'abord.');
-    try {
-      dayBoxes.forEach(b => b.classList.remove('selected'));
-      const canvas = await html2canvas(daysContainer, { backgroundColor: null, useCORS: true, scale: 2 });
-      const link = document.createElement('a');
-      link.href = canvas.toDataURL('image/png');
-      link.download = 'vision-21-jours.png';
-      link.click();
-    } catch (err) {
-      console.error(err);
-      alert('Erreur lors de la capture. Réessaie.');
-    }
-  }
-
-  // form submit
-  configForm.addEventListener('submit', (ev) => {
-    ev.preventDefault();
-    if (!gridGenerated) {
-      createGrid();
-      generateBtn.textContent = 'Réinitialiser';
-    } else {
-      if (!confirm("Es-tu sûr de vouloir réinitialiser ?")) return;
-      // reset
-      daysContainer.innerHTML = '';
-      dayBoxes = [];
-      gridGenerated = false;
-      currentDay = null;
-      generateBtn.textContent = 'Générer les 21 jours';
-      captureBtn.classList.add('hidden');
-      // remove overlays
-      const eo = document.getElementById('emojiPaletteOverlay'); if (eo) eo.remove();
-      const co = document.getElementById('colorPaletteOverlay'); if (co) co.remove();
-      // re-enable editors & show them
-      emojiInputs.forEach(i => i.disabled = false);
-      colorPickers.forEach(p => p.disabled = false);
-      showEditors();
-      // restore editors visible
-      emojiEditor.classList.remove('hidden');
-      colorEditor.classList.remove('hidden');
-    }
+// Boutons radio
+document.querySelectorAll('input[name="choice"]').forEach(radio => {
+  radio.addEventListener('change', (e)=>{
+    choice = e.target.value;
+    renderPalette();
   });
+});
 
-  // live preview before generation: typing in emoji inputs or choosing color updates the currently selected day
-  emojiInputs.forEach(inp => {
-    inp.addEventListener('input', () => {
-      if (currentDay && !gridGenerated) {
-        currentDay.textContent = inp.value || currentDay.dataset.label || '';
-        updateBoxAppearance(currentDay);
+function renderPalette(){
+  paletteContainer.innerHTML = '';
+  if(choice==='emoji' || choice==='both'){
+    emojis.forEach(e=>{
+      const div = document.createElement('div');
+      div.className='emoji-square';
+      div.textContent=e;
+      div.addEventListener('click', ()=> selectItem(div, e, 'emoji'));
+      paletteContainer.appendChild(div);
+    });
+  }
+  if(choice==='color' || choice==='both'){
+    colors.forEach(c=>{
+      const div = document.createElement('div');
+      div.className='color-square';
+      div.style.backgroundColor = c;
+      div.addEventListener('click', ()=> selectItem(div, c, 'color'));
+      paletteContainer.appendChild(div);
+    });
+  }
+}
+
+function selectItem(div, value, type){
+  if(type==='emoji'){
+    selectedEmojis = [value];
+  }else{
+    selectedColors = [value];
+  }
+  document.querySelectorAll('.emoji-square, .color-square').forEach(d=>d.classList.remove('selected'));
+  div.classList.add('selected');
+}
+
+// Générer la grille
+document.getElementById('generateBtn').addEventListener('click', ()=>{
+  gridContainer.innerHTML='';
+  gridData = [];
+  const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+  for(let i=0;i<21;i++){
+    const div = document.createElement('div');
+    div.className='grid-square';
+    let dateText = startDate ? new Date(startDate.getTime()+i*24*60*60*1000).toLocaleDateString('fr-FR') : `Jour ${i+1}`;
+    div.textContent = dateText;
+    div.addEventListener('click', ()=>{
+      if(selectedEmojis.length>0) {
+        div.textContent = selectedEmojis[0];
+        div.classList.add('emoji');
+      }
+      if(selectedColors.length>0) {
+        div.style.backgroundColor = selectedColors[0];
       }
     });
-  });
-  colorPickers.forEach(p => {
-    p.addEventListener('input', () => {
-      if (currentDay && !gridGenerated) {
-        currentDay.style.background = p.value;
-        currentDay.classList.add('colored');
-        updateBoxAppearance(currentDay);
-      }
-    });
-  });
+    gridContainer.appendChild(div);
+  }
+  instructionsText.textContent = 'Clique sur un jour pour le sélectionner, puis clique sur une couleur et/ou un emoji pour le faire apparaître.';
+});
 
-  captureBtn.addEventListener('click', captureGrid);
+// Réinitialiser
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Es-tu sûr de vouloir réinitialiser ?')){
+    location.reload();
+  }
+});
 
+// Télécharger (capture simple)
+document.getElementById('downloadBtn').addEventListener('click', ()=>{
+  html2canvas(gridContainer).then(canvas=>{
+    const link = document.createElement('a');
+    link.download = 'vision21jours.png';
+    link.href = canvas.toDataURL();
+    link.click();
+  });
 });
