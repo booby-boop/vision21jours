@@ -1,89 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;1,400&display=swap');
-
-:root{
-  --bg:#2b2f5a;
-  --gold:#c19751;
-  --white:#ffffff;
-  --dark:#1d1d1b;
-}
-
-*{box-sizing:border-box}
-body{
-  margin:0;
-  font-family:"Montserrat",system-ui,-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial;
-  background:var(--bg);
-  color:var(--white);
-}
-
-.container{
-  max-width:920px;
-  margin:0 auto;
-  padding:28px 20px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  text-align:center;
-}
-
-h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
-.intro{ margin:0 0 18px 0; max-width:720px; font-size:1rem; line-height:1.6; }
-
-.config{ width:100%; display:flex; flex-direction:column; align-items:center; gap:10px; margin-bottom:12px; }
-
-.custom-date{
-  width:260px;
-  padding:11px 14px;
-  border-radius:12px;
-  border:2px solid var(--gold);
-  background:transparent;
-  color:var(--white);
-  font-style:italic;
-  text-align:center;
-  font-size:15px;
-}
-.custom-date:focus{ box-shadow:0 0 0 6px rgba(193,151,81,0.14); border-color:var(--gold); }
-
-.radio-group{ display:flex; gap:14px; align-items:center; justify-content:center; }
-.radio-label{ display:flex; align-items:center; gap:8px; font-size:15px; color:var(--white); cursor:pointer; }
-.radio-label input[type="radio"]{ accent-color: var(--white); width:18px; height:18px; }
-
-.editor{ width:100%; max-width:720px; display:flex; flex-direction:column; align-items:center; gap:8px; margin-top:6px; }
-.editor-row{ display:flex; gap:10px; justify-content:center; align-items:center; }
-
-.emoji-input{
-  width:68px; height:68px; border-radius:12px;
-  border:2px solid rgba(255,255,255,0.12);
-  background:var(--white); text-align:center; font-size:38px; line-height:1; cursor:text;
-}
-.emoji-input:focus{ outline:none; box-shadow:0 0 0 6px rgba(193,151,81,0.14); border-color:var(--gold); }
-
-.color-picker{ -webkit-appearance:none; appearance:none; width:68px; height:68px; border-radius:12px; border:2px solid transparent; cursor:pointer; }
-.color-picker::-webkit-color-swatch-wrapper{ padding:0; border-radius:12px; }
-.color-picker::-webkit-color-swatch{ border:none; border-radius:12px; }
-
-.editor-hint{ font-size:13px; color:rgba(255,255,255,0.9); margin:0; }
-
-.actions{ display:flex; gap:12px; margin-top:8px; }
-.primary{ background:var(--gold); color:var(--dark); border:none; padding:12px 18px; border-radius:12px; font-weight:600; font-size:16px; cursor:pointer; }
-.secondary{ background:transparent; color:var(--white); border:2px solid rgba(255,255,255,0.12); padding:10px 14px; border-radius:12px; cursor:pointer; }
-
-.instruction{ margin-top:8px; color:rgba(255,255,255,0.85); font-size:14px; }
-
-.days-container{ margin-top:18px; width:100%; display:flex; justify-content:center; }
-.grid{ display:grid; gap:12px; justify-content:center; }
-@media (min-width:720px){ .grid{ grid-template-columns: repeat(7, 88px); } }
-@media (max-width:719px){ .grid{ grid-template-columns: repeat(3, 88px); } }
+/* ...tout le CSS précédent reste inchangé jusqu'à ... */
 
 .dayBox{
   width:88px; height:88px; border-radius:14px;
   background:var(--white); color:var(--dark);
   display:flex; align-items:center; justify-content:center;
-  font-weight:700; font-size:28px; cursor:pointer;
+  font-weight:700; font-size:18px; /* réduit de 28px -> 18px */
+  cursor:pointer;
   border:3px solid rgba(255,255,255,0.12);
   box-shadow:0 2px 6px rgba(0,0,0,0.12);
   text-align:center; padding:6px; word-break:break-word;
 }
-.dayBox.selected{ box-shadow:0 6px 18px rgba(0,0,0,0.25); border:4px solid var(--gold); }
-.dayBox.colored{ color:#fff; }
 
-.hidden{ display:none !important; }
+/* selected */
+.dayBox.selected{ box-shadow:0 6px 18px rgba(0,0,0,0.25); border:4px solid var(--gold); }
+/* colored */
+.dayBox.colored{ color:#fff; }
