@@ -2,94 +2,114 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap');
 
 body {
-  background-color: #2b2f5a;
   font-family: 'Montserrat', sans-serif;
+  background-color: #2b2f5a;
   color: white;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 20px;
   margin: 0;
-  padding: 0;
 }
 
 .container {
-  max-width: 700px;
-  margin: auto;
-  padding: 2rem;
+  max-width: 900px;
+  width: 100%;
   text-align: center;
 }
 
 h1 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
+  margin-bottom: 10px;
 }
 
-p {
-  font-size: 1rem;
+.intro {
+  font-size: 16px;
   line-height: 1.5;
+  margin-bottom: 20px;
 }
 
-.startDate input[type="date"] {
-  padding: 0.5rem;
+form {
+  margin-bottom: 20px;
+}
+
+#startDate {
+  padding: 10px;
+  font-size: 16px;
   border-radius: 8px;
   border: none;
-  font-family: 'Montserrat', sans-serif;
-  margin-left: 0.5rem;
+  margin-bottom: 10px;
 }
 
-.options label {
-  margin: 0 1rem;
-  font-weight: bold;
-  cursor: pointer;
+.choices {
+  margin: 10px 0;
 }
 
-.color-btn, .emoji-btn {
-  width: 50px;
-  height: 50px;
+.choices label {
+  margin-right: 15px;
+  font-size: 16px;
+}
+
+#colorMenu, #emojiMenu {
+  display: grid;
+  grid-template-columns: repeat(5, 60px);
+  gap: 10px;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.colorBox, .emojiBox {
+  width: 60px;
+  height: 60px;
   border-radius: 12px;
-  border: 2px solid white;
-  margin: 0.3rem;
+  border: 2px solid #c19751;
+  font-size: 24px;
   cursor: pointer;
-  font-size: 1.5rem;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
 }
 
-#generateBtn {
-  margin-top: 1.5rem;
-  padding: 1rem 2rem;
-  font-size: 1.2rem;
-  border-radius: 12px;
-  border: none;
+.colorBox {
+  border: 2px solid #c19751;
+}
+
+button[type="submit"] {
   background-color: #c19751;
-  color: #2b2f5a;
-  font-weight: bold;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 18px;
+  border-radius: 12px;
   cursor: pointer;
 }
 
-#days {
+button[type="submit"]:hover {
+  background-color: #a68042;
+}
+
+.hidden {
+  display: none;
+}
+
+/* Grille des 21 jours */
+#daysGrid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: repeat(7, 80px);
   gap: 15px;
-  margin-top: 2rem;
+  justify-content: center;
+  margin-top: 20px;
 }
 
 .dayBox {
   width: 80px;
   height: 80px;
   border-radius: 12px;
-  background-color: #ffffff30;
+  background-color: white;
+  color: #2b2f5a;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: bold;
+  font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, background-color 0.2s;
-}
-
-.dayBox:hover {
-  transform: scale(1.05);
-  background-color: #ffffff60;
-}
-
-.hidden {
-  display: none;
 }
