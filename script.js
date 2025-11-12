@@ -23,9 +23,9 @@ document.addEventListener('DOMContentLoaded', () => {
       dateFormat: "d/m/Y",
       allowInput: true,
       defaultDate: null,
-      onClose: function(fp) { fp.close(); },
-      onChange: function(fp) { fp.close(); },
-      onReady: function(selectedDates, dateStr, fp) {
+      onClose: fp => fp.close(),
+      onChange: fp => fp.close(),
+      onReady: (selectedDates, dateStr, fp) => {
         if (fp && fp.calendarContainer) {
           fp.calendarContainer.style.fontFamily = "Montserrat, sans-serif";
           fp.calendarContainer.style.borderRadius = "12px";
@@ -71,12 +71,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function createGrid() {
-    if (!isPaletteFilled()) {
-      return alert("Tu dois choisir au moins un emoji ou une couleur avant de générer la grille !");
-    }
+    if (!isPaletteFilled()) return alert("Tu dois choisir au moins un emoji ou une couleur avant de générer la grille !");
 
+    // reset avant création
     daysContainer.innerHTML = '';
     dayBoxes = [];
+    currentDay = null;
+
     let startDate = null;
     if (startDateEl.value) {
       const parts = startDateEl.value.split('/');
@@ -130,18 +131,18 @@ document.addEventListener('DOMContentLoaded', () => {
     emojiInputs.forEach(i => i.disabled = true);
     colorPickers.forEach(p => p.disabled = true);
 
+    // supprimer overlays existants
+    const oldEmojiOverlay = document.getElementById('emojiPaletteOverlay');
+    if (oldEmojiOverlay) oldEmojiOverlay.remove();
+    const oldColorOverlay = document.getElementById('colorPaletteOverlay');
+    if (oldColorOverlay) oldColorOverlay.remove();
+
     const mode = document.querySelector('input[name="mode"]:checked')?.value || '';
-    if (mode === 'emoji' || mode === 'both') {
-      if (document.getElementById('emojiPaletteOverlay')) document.getElementById('emojiPaletteOverlay').remove();
-      emojiEditor.replaceWith(createEmojiOverlay());
-    }
-    if (mode === 'color' || mode === 'both') {
-      if (document.getElementById('colorPaletteOverlay')) document.getElementById('colorPaletteOverlay').remove();
-      colorEditor.replaceWith(createColorOverlay());
-    }
+    if (mode === 'emoji' || mode === 'both') overlayEmoji();
+    if (mode === 'color' || mode === 'both') overlayColor();
   }
 
-  function createEmojiOverlay() {
+  function overlayEmoji() {
     const overlay = document.createElement('div');
     overlay.id = 'emojiPaletteOverlay';
     overlay.className = 'editor-row';
@@ -166,10 +167,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       overlay.appendChild(btn);
     });
-    return overlay;
+    emojiEditor.replaceWith(overlay);
   }
 
-  function createColorOverlay() {
+  function overlayColor() {
     const overlay = document.createElement('div');
     overlay.id = 'colorPaletteOverlay';
     overlay.className = 'editor-row';
@@ -192,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       overlay.appendChild(btn);
     });
-    return overlay;
+    colorEditor.replaceWith(overlay);
   }
 
   async function captureGrid() {
@@ -226,13 +227,14 @@ document.addEventListener('DOMContentLoaded', () => {
       generateBtn.textContent = 'Générer les 21 jours';
       captureBtn.classList.add('hidden');
       instructionP.classList.add('hidden');
+      startDateEl.value = '';
 
-      // reset des inputs
+      // reset inputs
       emojiInputs.forEach(i => { i.disabled = false; i.value = ''; });
       colorPickers.forEach(p => { p.disabled = false; });
       radioEls.forEach(r => r.disabled = false);
 
-      // supprimer overlays existants
+      // supprimer overlays
       const oldEmojiOverlay = document.getElementById('emojiPaletteOverlay');
       if (oldEmojiOverlay) oldEmojiOverlay.remove();
       const oldColorOverlay = document.getElementById('colorPaletteOverlay');
@@ -240,28 +242,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       showEditors();
     }
-  });
-
-  // mise à jour live si sélection d'emoji/color direct dans editor avant génération
-  emojiInputs.forEach(inp => {
-    inp.addEventListener('input', ev => {
-      if (!currentDay) return;
-      const contentEl = currentDay.querySelector('.mainContent');
-      contentEl.textContent = ev.target.value || '';
-      currentDay.dataset.type = 'emoji';
-      currentDay.dataset.value = ev.target.value || '';
-      updateBoxAppearance(currentDay);
-    });
-  });
-
-  colorPickers.forEach(p => {
-    p.addEventListener('input', () => {
-      if (!currentDay) return;
-      currentDay.style.background = p.value;
-      currentDay.dataset.type = 'color';
-      currentDay.dataset.value = p.value;
-      updateBoxAppearance(currentDay);
-    });
   });
 
   captureBtn.addEventListener('click', captureGrid);
