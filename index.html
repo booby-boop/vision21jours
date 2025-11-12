@@ -1,47 +1,89 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Vision 21 Jours</title>
-  <link rel="stylesheet" href="style.css">
+
+  <!-- Montserrat -->
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+  <!-- Flatpickr (calendar) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>Bienvenue dans ta Vision 21 Jours !</h1>
-  <p class="intro">
-    Cet outil te permet de <b>symboliser chaque jour la tendance de ta journée</b> par une couleur ou un émoji.
-    Tu peux choisir jusqu’à cinq éléments — <b>couleurs et/ou émojis</b> — et créer ton <b>code symbolique personnel</b>.
-    Cette <b>vision</b> t’aidera à observer les variations sur <b>21 jours</b>, et à identifier ce que tu souhaites ajuster dans ton quotidien.
-  </p>
+  <main class="container">
+    <h1>Bienvenue dans ta <strong>Vision 21 Jours</strong> !</h1>
 
-  <div class="form-section">
-    <input type="text" id="startDate" placeholder="Date de départ">
-    
-    <div class="checkbox-group">
-      <label><input type="checkbox" id="useEmojis"> Emojis</label>
-      <label><input type="checkbox" id="useColors"> Couleurs</label>
-    </div>
+    <!-- Intro with explicit line breaks after every sentence/point as requested -->
+    <p class="intro">
+      Cet outil te permet de <strong>symboliser chaque jour la tendance de ta journée</strong> par une couleur ou un émoji.<br>
+      Tu peux choisir jusqu’à cinq éléments (pour conserver une vue claire et équilibrée) — <strong>couleurs et/ou émojis</strong> — et créer ton <strong>code symbolique personnel</strong>.<br>
+      Cette <strong>vision</strong> t’aidera à observer les variations sur <strong>21 jours</strong>, et à identifier ce que tu souhaites explorer ou mettre en lumière dans ton quotidien.
+    </p>
 
-    <div id="emojiMenu" class="hidden">
-      <button class="emoji-btn">🏆</button>
-      <button class="emoji-btn">🌞</button>
-      <button class="emoji-btn">❤️</button>
-      <button class="emoji-btn">🌩️</button>
-      <button class="emoji-btn">⭐</button>
-    </div>
+    <!-- Form -->
+    <form id="configForm" class="config" autocomplete="off">
+      <!-- Date (flatpickr will attach) -->
+      <input id="startDate" class="custom-date" placeholder="Date de départ" />
 
-    <div id="colorMenu" class="hidden">
-      <button class="color-btn" style="background:#1d1d1b"></button>
-      <button class="color-btn" style="background:#e6007e"></button>
-      <button class="color-btn" style="background:#ffde00"></button>
-      <button class="color-btn" style="background:#00a19a"></button>
-      <button class="color-btn" style="background:#36a9e1"></button>
-    </div>
+      <!-- Radios (white / Montserrat) -->
+      <div class="radio-group" role="radiogroup" aria-label="Mode">
+        <label class="radio-label"><input type="radio" name="mode" value="emoji" checked> Émojis</label>
+        <label class="radio-label"><input type="radio" name="mode" value="color"> Couleurs</label>
+        <label class="radio-label"><input type="radio" name="mode" value="both"> Les deux</label>
+      </div>
 
-    <button id="generateBtn">Générer les 21 jours</button>
-    <button id="downloadBtn" class="hidden">Télécharger PDF</button>
-  </div>
+      <!-- Emoji editor BEFORE generation (editable inputs + quick pick) -->
+      <div id="emojiEditor" class="editor hidden" aria-hidden="true">
+        <div class="editor-row">
+          <input class="emoji-input" maxlength="2" value="🏆" title="Tape ou colle un emoji" />
+          <input class="emoji-input" maxlength="2" value="🌞" />
+          <input class="emoji-input" maxlength="2" value="❤️" />
+          <input class="emoji-input" maxlength="2" value="🌩️" />
+          <input class="emoji-input" maxlength="2" value="⭐" />
+        </div>
+        <p class="editor-hint">Tu peux taper/coller un emoji dans les champs ci-dessous ou utiliser les boutons rapides :</p>
+        <div class="quick-emoji">
+          <button type="button" class="emoji-btn quick">✨</button>
+          <button type="button" class="emoji-btn quick">💪</button>
+          <button type="button" class="emoji-btn quick">🧘‍♀️</button>
+          <button type="button" class="emoji-btn quick">🌈</button>
+          <button type="button" class="emoji-btn quick">🌙</button>
+        </div>
+      </div>
 
-  <div id="days" class="days-grid"></div>
+      <!-- Color editor BEFORE generation -->
+      <div id="colorEditor" class="editor hidden" aria-hidden="true">
+        <div class="editor-row">
+          <input type="color" class="color-picker" value="#1d1d1b" />
+          <input type="color" class="color-picker" value="#e6007e" />
+          <input type="color" class="color-picker" value="#ffde00" />
+          <input type="color" class="color-picker" value="#00a19a" />
+          <input type="color" class="color-picker" value="#36a9e1" />
+        </div>
+        <p class="editor-hint">Sélectionne jusqu’à 5 couleurs — arrondies & harmonisées.</p>
+      </div>
+
+      <div class="actions">
+        <button id="generateBtn" type="submit" class="primary">Générer les 21 jours</button>
+        <button id="downloadBtn" type="button" class="secondary hidden">Télécharger (PDF)</button>
+      </div>
+    </form>
+
+    <!-- Instruction line -->
+    <p class="instruction">Clique sur un jour pour le sélectionner, puis choisis une couleur et/ou un émoji.</p>
+
+    <!-- Grid container -->
+    <section id="daysContainer" class="days-container" aria-live="polite"></section>
+  </main>
+
+  <!-- Libraries: Flatpickr, html2canvas, jsPDF -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script src="script.js"></script>
 </body>
