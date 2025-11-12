@@ -2,67 +2,55 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Ma Vision 21 jours</title>
+  <title>Vision 21 Jours</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Ma Vision 21 jours</h1>
+  <div class="container">
 
-  <!-- Introduction -->
-  <div id="intro">
-    <p>Bienvenue dans ta <strong>Vision 21 Jours</strong> ! Pendant 21 jours, prends un moment chaque jour pour symboliser un événement important de ta journée ou ce que tu en retiens.</p>
-    <p>Tu peux choisir jusqu'à 5 éléments : emojis ou couleurs. Cela t'aidera à observer tes émotions et tendances. L'utilisation de 5 items max te donnera une vue globale et claire.</p>
-  </div>
+    <h1>Bienvenue dans ta <span>Vision 21 Jours</span> !</h1>
 
-  <!-- Formulaire de configuration -->
-  <div id="configForm">
-    <label for="startDate">Date de début :</label>
-    <input type="date" id="startDate">
+    <p class="intro">
+      Cet outil te permet de symboliser chaque jour la tendance de ta journée par une couleur ou un émoji.<br>
+      Tu peux choisir jusqu’à cinq éléments (pour conserver une vue claire et équilibrée) — couleurs ou émojis — et créer ton code symbolique personnel.<br>
+      Cette vision t’aidera à observer les variations sur trois semaines, et à identifier ce que tu souhaites ajuster dans ton quotidien.
+    </p>
 
-    <p>Choisis ton mode de symbolisation :</p>
-    <input type="radio" id="modeEmoji" name="mode" value="emoji" checked>
-    <label for="modeEmoji">Émojis</label>
-    <input type="radio" id="modeColor" name="mode" value="color">
-    <label for="modeColor">Couleurs</label>
+    <form id="setupForm">
+      <label for="startDate">Date de début :</label>
+      <input type="date" id="startDate" required placeholder="Cliquer pour afficher le calendrier">
+      <span id="dateError" class="error"></span>
 
-    <div id="emojiInputs">
-      <p>Exemples d’emojis (tu peux les personnaliser) :</p>
-      <input type="text" id="emojiInput1" maxlength="2" value="🏆">
-      <input type="text" id="emojiInput2" maxlength="2" value="🌞">
-      <input type="text" id="emojiInput3" maxlength="2" value="❤️">
-      <input type="text" id="emojiInput4" maxlength="2" value="🌩️">
-      <input type="text" id="emojiInput5" maxlength="2" value="⭐">
+      <button type="submit" class="start-btn">Commencer ma Vision 21 Jours</button>
+    </form>
+
+    <div id="days" class="hidden"></div>
+
+    <div id="emojiMenu" class="menu hidden">
+      <div class="menu-section">
+        <h3>Émojis</h3>
+        <div class="emoji-grid">
+          <button>🏆</button>
+          <button>🌞</button>
+          <button>❤️</button>
+          <button>🌩️</button>
+          <button>⭐</button>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <h3>Couleurs</h3>
+        <div class="color-grid">
+          <button style="background:#000;"></button>
+          <button style="background:#2b2f5a;"></button>
+          <button style="background:#c19751;"></button>
+          <button style="background:#e63946;"></button>
+          <button style="background:#f1fa8c;"></button>
+          <button style="background:#50c878;"></button>
+          <button style="background:#ff9ff3;"></button>
+        </div>
+      </div>
     </div>
-
-    <div id="colorInputs" class="hidden">
-      <p>Exemples de couleurs :</p>
-      <input type="color" id="color1" value="#000000">
-      <input type="color" id="color2" value="#ff0000">
-      <input type="color" id="color3" value="#ffff00">
-      <input type="color" id="color4" value="#00ff00">
-      <input type="color" id="color5" value="#ff99cc">
-    </div>
-
-    <button id="startBtn">Commencer ma Vision 21 Jours</button>
-  </div>
-
-  <!-- Instructions -->
-  <p class="instructions">
-    Pour insérer un emoji depuis ton clavier :<br>
-    <strong>Windows</strong> : touche Windows + point (.)<br>
-    <strong>Mac</strong> : Ctrl + Cmd + espace
-  </p>
-
-  <!-- Container des jours -->
-  <div id="days" class="hidden"></div>
-
-  <!-- Menu emojis -->
-  <div id="emojiMenu" class="hidden">
-    <button id="emoji1">🏆</button>
-    <button id="emoji2">🌞</button>
-    <button id="emoji3">❤️</button>
-    <button id="emoji4">🌩️</button>
-    <button id="emoji5">⭐</button>
   </div>
 
   <script src="script.js"></script>
