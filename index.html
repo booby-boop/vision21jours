@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
@@ -8,7 +8,7 @@
   <!-- Montserrat -->
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
 
-  <!-- Flatpickr (calendar) -->
+  <!-- Flatpickr CSS -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
   <link rel="stylesheet" href="style.css" />
@@ -24,15 +24,17 @@
     </p>
 
     <form id="configForm" class="config" autocomplete="off">
+      <!-- date field (Flatpickr will attach) -->
       <input id="startDate" class="custom-date" placeholder="Date de départ" />
 
+      <!-- radios -->
       <div class="radio-group" role="radiogroup" aria-label="Mode">
         <label class="radio-label"><input type="radio" name="mode" value="emoji" checked> Émojis</label>
         <label class="radio-label"><input type="radio" name="mode" value="color"> Couleurs</label>
         <label class="radio-label"><input type="radio" name="mode" value="both"> Les deux</label>
       </div>
 
-      <!-- Emoji editor BEFORE generation -->
+      <!-- emoji palette (editable BEFORE generation) -->
       <div id="emojiEditor" class="editor">
         <div class="editor-row">
           <input class="emoji-input" maxlength="4" value="🏆" title="Tape ou colle un emoji" />
@@ -41,10 +43,10 @@
           <input class="emoji-input" maxlength="4" value="🌩️" />
           <input class="emoji-input" maxlength="4" value="⭐" />
         </div>
-        <p class="editor-hint">Tape/colle un émoji dans chaque case si tu veux les personnaliser (avant de générer).</p>
+        <p class="editor-hint">Personnalise les émojis avant de générer (appuie Entrée pour appliquer à la case sélectionnée).</p>
       </div>
 
-      <!-- Color editor BEFORE generation -->
+      <!-- color palette (editable BEFORE generation) -->
       <div id="colorEditor" class="editor hidden">
         <div class="editor-row">
           <input type="color" class="color-picker" value="#1d1d1b" />
@@ -53,7 +55,7 @@
           <input type="color" class="color-picker" value="#00a19a" />
           <input type="color" class="color-picker" value="#36a9e1" />
         </div>
-        <p class="editor-hint">Choisis jusqu’à 5 couleurs. Elles seront appliquées aux cases depuis la palette.</p>
+        <p class="editor-hint">Choisis jusqu'à 5 couleurs. Après génération, la palette sera figée.</p>
       </div>
 
       <div class="actions">
@@ -62,12 +64,12 @@
       </div>
     </form>
 
-    <p class="instruction">Clique sur un jour pour le sélectionner, puis clique sur une couleur ou un émoji (palette figée après génération).</p>
+    <p class="instruction">Clique sur un jour pour le sélectionner, puis clique sur un émoji ou une couleur (palettes figées après génération).</p>
 
-    <section id="daysContainer" class="days-container" aria-live="polite"></section>
+    <section id="daysContainer" class="days-container grid" aria-live="polite"></section>
   </main>
 
-  <!-- Libs -->
+  <!-- libs: Flatpickr then html2canvas -->
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
