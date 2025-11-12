@@ -1,77 +1,84 @@
 const DAYS = 21;
-
-const startForm = document.getElementById('startForm');
-const startDateInput = document.getElementById('startDate');
-const dateError = document.getElementById('dateError');
-const generateBtn = document.getElementById('generateBtn');
-const daysGrid = document.getElementById('days');
-
-const useColorsCheckbox = document.getElementById('useColors');
-const useEmojisCheckbox = document.getElementById('useEmojis');
-
-const colorMenu = document.getElementById('colorMenu');
+const emojiButtons = document.querySelectorAll('.emoji-btn');
+const colorPickers = document.querySelectorAll('.color-picker');
+const daysDiv = document.getElementById('days');
 const emojiMenu = document.getElementById('emojiMenu');
+const colorMenu = document.getElementById('colorMenu');
+const generateBtn = document.getElementById('generateBtn');
+const startDateInput = document.getElementById('startDate');
+let currentDayBox = null;
+let gridGenerated = false;
 
-let currentBox = null;
-
-// Générer / réinitialiser les 21 jours
-startForm.addEventListener('submit', (e) => {
-  e.preventDefault();
-
-  if (!startDateInput.value) {
-    dateError.style.display = 'block';
-    return;
-  } else {
-    dateError.style.display = 'none';
+// Flatpickr init
+flatpickr("#startDate", {
+  dateFormat: "d/m/Y",
+  allowInput: true,
+  onOpen: function(selectedDates, dateStr, instance) {
+      instance.calendarContainer.style.fontFamily = "Montserrat, sans-serif";
+      instance.calendarContainer.style.borderRadius = "12px";
+      instance.calendarContainer.style.border = "2px solid #c19751";
   }
-
-  // Si déjà généré, demander confirmation pour réinitialiser
-  if (daysGrid.children.length > 0) {
-    if (!confirm("Es-tu sûr de vouloir réinitialiser ?")) return;
-    daysGrid.innerHTML = '';
-    generateBtn.textContent = "Générer les 21 jours";
-  }
-
-  const startDate = new Date(startDateInput.value);
-
-  for (let i = 0; i < DAYS; i++) {
-    const dayBox = document.createElement('div');
-    dayBox.className = 'dayBox';
-
-    const day = new Date(startDate);
-    day.setDate(day.getDate() + i);
-    const dayStr = day.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-
-    dayBox.textContent = dayStr;
-    dayBox.addEventListener('click', () => {
-      currentBox = dayBox;
-      if (useColorsCheckbox.checked) colorMenu.classList.remove('hidden');
-      if (useEmojisCheckbox.checked) emojiMenu.classList.remove('hidden');
-    });
-
-    daysGrid.appendChild(dayBox);
-  }
-
-  generateBtn.textContent = "Réinitialiser";
 });
 
-// Sélection couleur
-document.querySelectorAll('.colorBox').forEach(btn => {
-  btn.addEventListener('click', () => {
-    if (currentBox) {
-      currentBox.style.backgroundColor = btn.style.backgroundColor;
-      currentBox.style.color = '#fff';
+// Affichage selon type choisi
+document.querySelectorAll('input[name="type"]').forEach(input => {
+  input.addEventListener('change', () => {
+    if (input.value === 'emoji') {
+      emojiMenu.classList.remove('hidden');
+      colorMenu.classList.add('hidden');
+    } else if (input.value === 'color') {
+      colorMenu.classList.remove('hidden');
+      emojiMenu.classList.add('hidden');
+    } else {
+      emojiMenu.classList.remove('hidden');
+      colorMenu.classList.remove('hidden');
     }
-    document.querySelectorAll('.colorBox').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
   });
 });
 
+// Générer grille
+generateBtn.addEventListener('click', () => {
+  if (!gridGenerated) {
+    daysDiv.innerHTML = '';
+    let startDate = startDateInput.value ? new Date(startDateInput.value.split('/').reverse().join('-')) : null;
+    for (let i = 1; i <= DAYS; i++) {
+      const box = document.createElement('div');
+      box.className = 'dayBox';
+      let dayLabel = startDate ? new Date(startDate.getTime() + (i-1)*24*60*60*1000) : null;
+      box.textContent = dayLabel ? dayLabel.toLocaleDateString('fr-FR') : `Jour ${i}`;
+      box.addEventListener('click', () => {
+        if (currentDayBox) currentDayBox.classList.remove('selected');
+        currentDayBox = box;
+        box.classList.add('selected');
+      });
+      daysDiv.appendChild(box);
+    }
+    generateBtn.textContent = 'Réinitialiser';
+    gridGenerated = true;
+  } else {
+    if (confirm("Es-tu sûr de vouloir réinitialiser ?")) {
+      daysDiv.innerHTML = '';
+      generateBtn.textContent = 'Générer les 21 jours';
+      gridGenerated = false;
+      currentDayBox = null;
+    }
+  }
+});
+
 // Sélection emoji
-document.querySelectorAll('.emojiBox').forEach(btn => {
+emojiButtons.forEach(btn => {
   btn.addEventListener('click', () => {
-    if (currentBox) currentBox.textContent = btn.textContent;
-    document.querySelectorAll('.emojiBox').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
+    if (currentDayBox) {
+      currentDayBox.textContent = btn.textContent;
+    }
+  });
+});
+
+// Sélection couleur
+colorPickers.forEach(picker => {
+  picker.addEventListener('input', () => {
+    if (currentDayBox) {
+      currentDayBox.style.backgroundColor = picker.value;
+    }
   });
 });
