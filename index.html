@@ -1,50 +1,55 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
   <title>Vision 21 Jours</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="container">
-    <h1>Bienvenue dans ta <strong>Vision 21 Jours</strong> !</h1>
+    <h1>Bienvenue dans ta Vision 21 Jours !</h1>
     <p>
-      Cet outil te permet de symboliser chaque jour <strong>la tendance de ta journée</strong> par une couleur ou un émoji.<br>
-      Tu peux choisir jusqu’à cinq éléments (pour conserver une vue claire et équilibrée) — couleurs et/ou émojis — et créer ton <strong>code symbolique personnel</strong>.<br>
-      Cette <strong>vision</strong> t’aidera à observer les variations sur <strong>21 jours</strong>, et à identifier ce que tu souhaites explorer ou mettre en lumière dans ton quotidien.
+      Cet outil te permet de symboliser chaque jour la tendance de ta journée par une couleur ou un émoji. 
+      Tu peux choisir jusqu’à cinq éléments — couleurs et/ou émojis — et créer ton code symbolique personnel. 
+      Cette vision t’aidera à observer les variations sur 21 jours, et à identifier ce que tu souhaites observer ou ajuster dans ton quotidien.
     </p>
 
-    <div class="options">
-      <label><input type="checkbox" id="useColors" checked> Couleurs</label>
-      <label><input type="checkbox" id="useEmojis" checked> Émojis</label>
+    <!-- Formulaire de choix -->
+    <div class="startDate">
+      <label for="startDate">Date de départ :</label>
+      <input type="date" id="startDate">
     </div>
 
-    <div class="startDate">
-      <label for="startDateInput">Date de départ :</label>
-      <input type="date" id="startDateInput" />
-      <button id="generateDays">Générer les 21 jours</button>
+    <div class="options">
+      <label>
+        <input type="checkbox" id="chooseColors"> Couleurs
+      </label>
+      <label>
+        <input type="checkbox" id="chooseEmojis"> Émojis
+      </label>
     </div>
+
+    <!-- Palette de couleurs et emojis -->
+    <div class="choices">
+      <div id="colorMenu" class="hidden">
+        <button class="color-btn" style="background-color:black"></button>
+        <button class="color-btn" style="background-color:red"></button>
+        <button class="color-btn" style="background-color:yellow"></button>
+        <button class="color-btn" style="background-color:green"></button>
+        <button class="color-btn" style="background-color:#FFC0CB"></button> <!-- rose -->
+      </div>
+      <div id="emojiMenu" class="hidden">
+        <button class="emoji-btn">🏆</button>
+        <button class="emoji-btn">🌞</button>
+        <button class="emoji-btn">❤️</button>
+        <button class="emoji-btn">🌩️</button>
+        <button class="emoji-btn">⭐</button>
+      </div>
+    </div>
+
+    <button id="generateBtn">Générer les 21 jours</button>
 
     <div id="days" class="days"></div>
-
-    <div id="selectionMenu" class="hidden">
-      <div id="colorChoices" class="choices hidden">
-        <button class="color-btn" style="background-color:#f94144;"></button>
-        <button class="color-btn" style="background-color:#f3722c;"></button>
-        <button class="color-btn" style="background-color:#f9c74f;"></button>
-        <button class="color-btn" style="background-color:#90be6d;"></button>
-        <button class="color-btn" style="background-color:#577590;"></button>
-      </div>
-
-      <div id="emojiChoices" class="choices hidden">
-        <button class="emoji-btn">🌞</button>
-        <button class="emoji-btn">🌧️</button>
-        <button class="emoji-btn">🔥</button>
-        <button class="emoji-btn">💫</button>
-        <button class="emoji-btn">❤️</button>
-      </div>
-    </div>
   </div>
 
   <script src="script.js"></script>
