@@ -64,8 +64,26 @@ h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
 .editor-hint{ font-size:13px; color:rgba(255,255,255,0.9); margin:0; }
 
 .actions{ display:flex; gap:12px; margin-top:8px; }
-.primary{ background:var(--gold); color:var(--dark); border:none; padding:12px 18px; border-radius:12px; font-weight:600; font-size:16px; cursor:pointer; }
-.secondary{ background:transparent; color:var(--white); border:2px solid rgba(255,255,255,0.12); padding:10px 14px; border-radius:12px; cursor:pointer; }
+.primary{
+  background:var(--gold);
+  color:var(--dark);
+  border:none;
+  padding:12px 18px;
+  border-radius:12px;
+  font-weight:600;
+  font-size:16px;
+  font-family:"Montserrat",sans-serif; /* typo Montserrat */
+  cursor:pointer;
+}
+.secondary{
+  background:transparent;
+  color:var(--white);
+  border:2px solid rgba(255,255,255,0.12);
+  padding:10px 14px;
+  border-radius:12px;
+  font-family:"Montserrat",sans-serif; /* typo Montserrat */
+  cursor:pointer;
+}
 
 .instruction{ margin-top:8px; color:rgba(255,255,255,0.85); font-size:14px; }
 
@@ -74,12 +92,12 @@ h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
 @media (min-width:720px){ .grid{ grid-template-columns: repeat(7, 88px); } }
 @media (max-width:719px){ .grid{ grid-template-columns: repeat(3, 88px); } }
 
-
 .dayBox{
   width:88px; height:88px; border-radius:14px;
   background:var(--white); color:var(--dark);
   display:flex; align-items:center; justify-content:center;
-  font-weight:700; font-size:18px; /* réduit de 28px -> 18px */
+  font-weight:700;
+  font-size:18px; /* réduit de 28px -> 18px pour texte normal */
   cursor:pointer;
   border:3px solid rgba(255,255,255,0.12);
   box-shadow:0 2px 6px rgba(0,0,0,0.12);
@@ -91,5 +109,7 @@ h1{ margin:0 0 12px 0; font-size:1.6rem; line-height:1.1; }
 /* colored */
 .dayBox.colored{ color:#fff; }
 
+/* augmenter la taille pour emoji dans la case */
+.dayBox[data-type="emoji"]{ font-size:34px; line-height:1; }
 
 .hidden{ display:none !important; }
