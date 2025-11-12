@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let currentDay = null;
   let gridGenerated = false;
 
-  // flatpickr
+  // --- flatpickr ---
   if (typeof flatpickr === 'function') {
     flatpickr(startDateEl, {
       dateFormat: "d/m/Y",
@@ -31,12 +31,13 @@ document.addEventListener('DOMContentLoaded', () => {
           fp.calendarContainer.style.borderRadius = "12px";
           fp.calendarContainer.style.border = "2px solid #c19751";
           fp.calendarContainer.style.background = "#fff";
-          fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(d => d.style.color = '#000');
+          fp.calendarContainer.querySelectorAll('.flatpickr-day').forEach(d => d.style.color = '#00008B'); // bleu foncé
         }
       }
     });
   }
 
+  // --- Affichage des éditeurs ---
   function showEditors() {
     const mode = document.querySelector('input[name="mode"]:checked')?.value || '';
     emojiEditor.classList.toggle('hidden', !(mode === 'emoji' || mode === 'both'));
@@ -45,6 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
   radioEls.forEach(r => r.addEventListener('change', showEditors));
   showEditors();
 
+  // --- Mise à jour apparence d'une box ---
   function updateBoxAppearance(box) {
     const contentEl = box.querySelector('.mainContent');
     const txt = contentEl?.textContent.trim() || '';
@@ -64,12 +66,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- Vérifier si palette remplie ---
   function isPaletteFilled() {
-    const emojisFilled = emojiInputs.some(i => i.value.trim() !== '');
-    const colorsFilled = colorPickers.some(c => c.value.trim() !== '');
-    return emojisFilled || colorsFilled;
+    return emojiInputs.some(i => i.value.trim() !== '') || colorPickers.some(c => c.value.trim() !== '');
   }
 
+  // --- Création grille ---
   function createGrid() {
     if (!isPaletteFilled()) return alert("Tu dois choisir au moins un emoji ou une couleur avant de générer la grille !");
 
@@ -131,17 +133,15 @@ document.addEventListener('DOMContentLoaded', () => {
     emojiInputs.forEach(i => i.disabled = true);
     colorPickers.forEach(p => p.disabled = true);
 
-    // supprimer overlays existants
-    const oldEmojiOverlay = document.getElementById('emojiPaletteOverlay');
-    if (oldEmojiOverlay) oldEmojiOverlay.remove();
-    const oldColorOverlay = document.getElementById('colorPaletteOverlay');
-    if (oldColorOverlay) oldColorOverlay.remove();
+    // suppression overlays
+    removeOverlays();
 
     const mode = document.querySelector('input[name="mode"]:checked')?.value || '';
     if (mode === 'emoji' || mode === 'both') overlayEmoji();
     if (mode === 'color' || mode === 'both') overlayColor();
   }
 
+  // --- Overlay emojis ---
   function overlayEmoji() {
     const overlay = document.createElement('div');
     overlay.id = 'emojiPaletteOverlay';
@@ -170,6 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     emojiEditor.replaceWith(overlay);
   }
 
+  // --- Overlay couleurs ---
   function overlayColor() {
     const overlay = document.createElement('div');
     overlay.id = 'colorPaletteOverlay';
@@ -196,6 +197,14 @@ document.addEventListener('DOMContentLoaded', () => {
     colorEditor.replaceWith(overlay);
   }
 
+  function removeOverlays() {
+    const oldEmojiOverlay = document.getElementById('emojiPaletteOverlay');
+    if (oldEmojiOverlay) oldEmojiOverlay.remove();
+    const oldColorOverlay = document.getElementById('colorPaletteOverlay');
+    if (oldColorOverlay) oldColorOverlay.remove();
+  }
+
+  // --- Capture ---
   async function captureGrid() {
     if (!gridGenerated) return alert('Génère la grille d\'abord.');
     try {
@@ -211,6 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- Soumission formulaire ---
   configForm.addEventListener('submit', ev => {
     ev.preventDefault();
     if (!gridGenerated) {
@@ -235,13 +245,32 @@ document.addEventListener('DOMContentLoaded', () => {
       radioEls.forEach(r => r.disabled = false);
 
       // supprimer overlays
-      const oldEmojiOverlay = document.getElementById('emojiPaletteOverlay');
-      if (oldEmojiOverlay) oldEmojiOverlay.remove();
-      const oldColorOverlay = document.getElementById('colorPaletteOverlay');
-      if (oldColorOverlay) oldColorOverlay.remove();
+      removeOverlays();
 
       showEditors();
     }
+  });
+
+  // --- Input direct ---
+  emojiInputs.forEach(inp => {
+    inp.addEventListener('input', ev => {
+      if (!currentDay) return;
+      const contentEl = currentDay.querySelector('.mainContent');
+      contentEl.textContent = ev.target.value || '';
+      currentDay.dataset.type = 'emoji';
+      currentDay.dataset.value = ev.target.value || '';
+      updateBoxAppearance(currentDay);
+    });
+  });
+
+  colorPickers.forEach(p => {
+    p.addEventListener('input', () => {
+      if (!currentDay) return;
+      currentDay.style.background = p.value;
+      currentDay.dataset.type = 'color';
+      currentDay.dataset.value = p.value;
+      updateBoxAppearance(currentDay);
+    });
   });
 
   captureBtn.addEventListener('click', captureGrid);
