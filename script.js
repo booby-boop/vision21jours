@@ -1,39 +1,27 @@
 const DAYS = 21;
-let EMOJIS = ["🏆","🌞","❤️","🌩️","⭐"];
-let COLORS = ["#000000","#ff0000","#ffff00","#00ff00","#ff99cc"];
-
 const daysDiv = document.getElementById('days');
 const emojiMenu = document.getElementById('emojiMenu');
-const startBtn = document.getElementById('startBtn');
-const configForm = document.getElementById('configForm');
-const emojiInputs = document.getElementById('emojiInputs');
-const colorInputs = document.getElementById('colorInputs');
-
+const setupForm = document.getElementById('setupForm');
+const dateError = document.getElementById('dateError');
 let currentDayBox = null;
 
-// bascule emoji / couleur
-document.getElementById('modeEmoji').addEventListener('change', () => {
-  emojiInputs.classList.remove('hidden');
-  colorInputs.classList.add('hidden');
-});
-document.getElementById('modeColor').addEventListener('change', () => {
-  emojiInputs.classList.add('hidden');
-  colorInputs.classList.remove('hidden');
-});
+// Validation du formulaire
+setupForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const startDate = document.getElementById('startDate').value;
 
-// démarrage Vision 21 Jours
-startBtn.addEventListener('click', () => {
-  // récupérer emojis / couleurs personnalisés
-  for(let i=1;i<=5;i++){
-    EMOJIS[i-1] = document.getElementById(`emojiInput${i}`).value || EMOJIS[i-1];
-    COLORS[i-1] = document.getElementById(`color${i}`).value || COLORS[i-1];
+  if (!startDate) {
+    dateError.textContent = "Merci de sélectionner une date avant de commencer ✨";
+    return;
   }
 
-  configForm.classList.add('hidden');
+  setupForm.classList.add('hidden');
   daysDiv.classList.remove('hidden');
+  createDays();
+});
 
-  // créer 21 cases
-  daysDiv.innerHTML = '';
+// Création des 21 jours
+function createDays() {
   for (let i = 1; i <= DAYS; i++) {
     const box = document.createElement('div');
     box.className = 'dayBox';
@@ -41,25 +29,26 @@ startBtn.addEventListener('click', () => {
     box.addEventListener('click', () => {
       currentDayBox = box;
       emojiMenu.classList.remove('hidden');
-
-      // bascule les boutons selon mode
-      if(document.getElementById('modeColor').checked){
-        EMOJIS = COLORS;
-        for(let j=1;j<=5;j++){
-          document.getElementById(`emoji${j}`).textContent = EMOJIS[j-1];
-        }
-      }
     });
     daysDiv.appendChild(box);
   }
+}
+
+// Sélection d’un émoji
+document.querySelectorAll('.emoji-grid button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (currentDayBox) currentDayBox.textContent = btn.textContent;
+    emojiMenu.classList.add('hidden');
+  });
 });
 
-// choisir un emoji / couleur
-for(let i=1;i<=5;i++){
-  document.getElementById(`emoji${i}`).addEventListener('click', () => {
-    if(currentDayBox){
-      currentDayBox.textContent = EMOJIS[i-1];
+// Sélection d’une couleur
+document.querySelectorAll('.color-grid button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    if (currentDayBox) {
+      currentDayBox.style.background = btn.style.background;
+      currentDayBox.textContent = '';
     }
     emojiMenu.classList.add('hidden');
   });
-}
+});
