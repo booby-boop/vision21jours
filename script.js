@@ -1,95 +1,110 @@
-const emojiPalette = ['😀','😅','😍','😢','😡'];
-const colorPalette = ['#1d1d1b','#e6007e','#ffde00','#00a19a','#36a9e1'];
+const startDateInput = document.getElementById('startDate');
+const paletteContainer = document.getElementById('paletteContainer');
+const generateBtn = document.getElementById('generateBtn');
+const gridContainer = document.getElementById('gridContainer');
+const downloadBtn = document.getElementById('downloadBtn');
+const instructionText = document.getElementById('instructionText');
 
-let selectedMode = null;
-let selectedEmoji = null;
-let selectedColor = null;
+let selectedType = null;
+let paletteItems = [];
+let selectedPaletteItem = null;
 let gridGenerated = false;
 
-const modeRadios = document.querySelectorAll('input[name="mode"]');
-const emojiContainer = document.querySelector('#emoji-palette .items');
-const colorContainer = document.querySelector('#color-palette .items');
-const generateBtn = document.getElementById('generate-btn');
-const downloadBtn = document.getElementById('download-btn');
-const grid = document.getElementById('grid');
-const instruction = document.getElementById('instruction');
-const startDateInput = document.getElementById('start-date');
+const emojiList = ['😊','🎉','❤️','💡','🔥','✨','🌸','🌞','🌙','⭐'];
+const colorList = ['#1d1d1b','#e6007e','#ffde00','#00a19a','#36a9e1'];
 
-function createPalette(container, items, type) {
-  container.innerHTML = '';
-  items.forEach(item => {
+function createPalette(type) {
+  paletteContainer.innerHTML = '';
+  paletteItems = [];
+  const list = type === 'emoji' ? emojiList : type === 'color' ? colorList : [...emojiList, ...colorList];
+  
+  list.forEach(item => {
     const div = document.createElement('div');
-    div.classList.add('item');
-    div.innerHTML = type === 'emoji' ? item : '';
-    if(type === 'color') div.style.backgroundColor = item;
+    div.className = 'palette-item';
+    if(type === 'color' || (type === 'both' && colorList.includes(item))) {
+      div.style.backgroundColor = item;
+    } else {
+      div.textContent = item;
+    }
     div.addEventListener('click', () => {
-      container.querySelectorAll('.item').forEach(i => i.classList.remove('selected'));
+      paletteItems.forEach(p => p.classList.remove('selected'));
       div.classList.add('selected');
-      if(type === 'emoji') selectedEmoji = item;
-      else selectedColor = item;
+      selectedPaletteItem = item;
     });
-    container.appendChild(div);
+    paletteContainer.appendChild(div);
+    paletteItems.push(div);
   });
 }
 
-modeRadios.forEach(radio => {
-  radio.addEventListener('change', () => {
-    selectedMode = radio.value;
-    document.getElementById('emoji-palette').classList.add('hidden');
-    document.getElementById('color-palette').classList.add('hidden');
-    if(selectedMode === 'emoji') {
-      document.getElementById('emoji-palette').classList.remove('hidden');
-      createPalette(emojiContainer, emojiPalette, 'emoji');
-    } else if(selectedMode === 'color') {
-      document.getElementById('color-palette').classList.remove('hidden');
-      createPalette(colorContainer, colorPalette, 'color');
-    } else if(selectedMode === 'both') {
-      document.getElementById('emoji-palette').classList.remove('hidden');
-      document.getElementById('color-palette').classList.remove('hidden');
-      createPalette(emojiContainer, emojiPalette, 'emoji');
-      createPalette(colorContainer, colorPalette, 'color');
-    }
+document.querySelectorAll('input[name="typeSelect"]').forEach(radio => {
+  radio.addEventListener('change', (e) => {
+    selectedType = e.target.value;
+    createPalette(selectedType);
   });
 });
 
 function generateGrid() {
-  grid.innerHTML = '';
-  const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+  if(gridGenerated) return;
+  let startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+  gridContainer.innerHTML = '';
+  const today = new Date();
+  
   for(let i=0;i<21;i++){
     const cell = document.createElement('div');
-    cell.classList.add('cell');
-    cell.dataset.index = i;
+    cell.className = 'grid-cell';
+    let displayText;
     if(startDate){
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
-      cell.textContent = date.toLocaleDateString('fr-FR');
+      displayText = `${date.getDate()}/${date.getMonth()+1}`;
     } else {
-      cell.textContent = `Jour ${i+1}`;
+      displayText = `Jour ${i+1}`;
     }
+    cell.textContent = displayText;
+    cell.style.fontSize = '0.8rem';
+    
     cell.addEventListener('click', () => {
-      if(!gridGenerated) return;
-      if(selectedMode === 'emoji' || selectedMode === 'both') {
-        cell.textContent = selectedEmoji || '';
-        cell.classList.add('emoji');
-      }
-      if(selectedMode === 'color' || selectedMode === 'both') {
-        cell.style.backgroundColor = selectedColor || '#1d1d1b';
+      if(selectedPaletteItem){
+        if(typeof selectedPaletteItem === 'string' && selectedPaletteItem.startsWith('#')){
+          cell.style.backgroundColor = selectedPaletteItem;
+          cell.textContent = '';
+        } else {
+          cell.textContent = selectedPaletteItem;
+          cell.style.fontSize = '24px';
+        }
       }
     });
-    grid.appendChild(cell);
+    
+    gridContainer.appendChild(cell);
   }
+
   gridGenerated = true;
-  instruction.classList.remove('hidden');
+  instructionText.textContent = 'Clique sur un jour pour le sélectionner, puis clique sur une couleur et ou un emoji pour le faire apparaître.';
 }
 
 generateBtn.addEventListener('click', () => {
-  generateGrid();
+  if(!gridGenerated) {
+    generateGrid();
+    generateBtn.textContent = 'Réinitialiser';
+  } else {
+    if(confirm('Es-tu sûr de vouloir réinitialiser ?')){
+      gridContainer.innerHTML = '';
+      paletteContainer.innerHTML = '';
+      instructionText.textContent = '';
+      generateBtn.textContent = 'Générer les 21 jours';
+      startDateInput.value = '';
+      selectedPaletteItem = null;
+      selectedType = null;
+      gridGenerated = false;
+      document.querySelectorAll('input[name="typeSelect"]').forEach(r => r.checked = false);
+    }
+  }
 });
 
 downloadBtn.addEventListener('click', () => {
-  html2canvas(grid).then(canvas => {
+  html2canvas(gridContainer).then(canvas => {
     const link = document.createElement('a');
-    link.download = 'vision21jours.png';
+    link.download = 'Vision21Jours.png';
     link.href = canvas.toDataURL();
     link.click();
   });
