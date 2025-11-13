@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
       contentEl.textContent = txt;
       contentEl.style.fontSize = isEmoji ? '34px' : '14px';
       contentEl.style.lineHeight = isEmoji ? '1' : '1.1';
+      contentEl.style.fontFamily = isEmoji ? 'Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji,sans-serif' : 'inherit';
     }
 
     box.style.background = box.dataset.color || 'white';
@@ -77,7 +78,6 @@ document.addEventListener('DOMContentLoaded', () => {
   function createGrid(savedData = null) {
     if (!isPaletteFilled() && !savedData) return alert("Tu dois choisir au moins un emoji ou une couleur avant de générer la grille !");
 
-    // reset
     daysContainer.innerHTML = '';
     dayBoxes = [];
     currentDay = null;
@@ -115,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
         box.dataset.label = label;
       }
 
-      // restaurer données sauvegardées
       if (savedData?.days?.[i]) {
         const dayData = savedData.days[i];
         box.dataset.emoji = dayData.emoji || '';
@@ -317,4 +316,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   loadFromLocalStorage();
+
+  // --- date par défaut au jour actuel si vide ---
+  if (!startDateEl.value) {
+    const today = new Date();
+    startDateEl.value = formatDateForInput(today);
+  }
 });
