@@ -54,14 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const isEmoji = txt.length > 0;
 
     if (contentEl) {
-      contentEl.textContent = box.dataset.emoji || '';
+      contentEl.textContent = txt;
       contentEl.style.fontSize = isEmoji ? '34px' : '14px';
       contentEl.style.lineHeight = isEmoji ? '1' : '1.1';
     }
 
     box.style.background = box.dataset.color || 'white';
-
-    if (box.dataset.color && box.dataset.color !== 'white' && box.dataset.color !== '#ffffff') {
+    if (box.dataset.color && box.dataset.color.toLowerCase() !== 'white' && box.dataset.color !== '#ffffff') {
       box.classList.add('colored');
       box.style.color = '#fff';
     } else {
@@ -140,12 +139,9 @@ document.addEventListener('DOMContentLoaded', () => {
     captureBtn.classList.remove('hidden');
     instructionP.classList.remove('hidden');
 
-    // --- désactiver radios après génération ---
     radioEls.forEach(r => r.disabled = true);
-
     removeOverlays();
 
-    // --- restaurer palettes personnalisées ---
     if (savedData) {
       emojiInputs.forEach((inp, idx) => {
         inp.value = savedData.emojiInputs?.[idx] || inp.value;
@@ -161,16 +157,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     attachInputListeners();
     generateBtn.textContent = 'Réinitialiser';
-
     saveToLocalStorage(mode);
   }
 
+  // --- overlay emoji ---
   function overlayEmoji() {
     const overlay = document.createElement('div');
     overlay.id = 'emojiPaletteOverlay';
     overlay.className = 'editor-row';
     emojiInputs.forEach(inp => {
       if (!inp.value) return;
+      const fullChar = Array.from(inp.value)[0];
+      if (!fullChar) return;
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'emoji-btn quick-palette';
@@ -179,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.style.borderRadius = '12px';
       btn.style.border = '4px solid transparent';
       btn.style.fontSize = '34px';
-      btn.textContent = inp.value;
+      btn.textContent = fullChar;
       btn.addEventListener('click', () => {
         if (!currentDay) return alert('Clique d\'abord sur un jour.');
         currentDay.dataset.emoji = btn.textContent;
@@ -192,6 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     emojiEditor = document.getElementById('emojiPaletteOverlay');
   }
 
+  // --- overlay couleur ---
   function overlayColor() {
     const overlay = document.createElement('div');
     overlay.id = 'colorPaletteOverlay';
@@ -259,7 +258,8 @@ document.addEventListener('DOMContentLoaded', () => {
     emojiInputs.forEach(inp => {
       inp.addEventListener('input', ev => {
         if (!currentDay) return;
-        currentDay.dataset.emoji = ev.target.value || '';
+        const fullChar = Array.from(ev.target.value)[0] || '';
+        currentDay.dataset.emoji = fullChar;
         updateBoxAppearance(currentDay);
         saveToLocalStorage(document.querySelector('input[name="mode"]:checked')?.value || 'both');
       });
@@ -294,22 +294,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (data) createGrid(JSON.parse(data));
   }
 
+  // --- FIX BUG DATE ---
+  function parseDate(input) {
+    if (!input) return null;
+    const parts = input.split('/');
+    if (parts.length === 3) {
+      const day = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const year = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      return isNaN(d.getTime()) ? null : d;
+    }
+    return null;
+  }
+
   function formatDateForInput(date) {
+    if (!date) return '';
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
-  }
-
-  function parseDate(input) {
-    let d = new Date(input);
-    if (!isNaN(d.getTime())) return d;
-    const parts = input.split('/');
-    if (parts.length === 3) {
-      d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
-      if (!isNaN(d.getTime())) return d;
-    }
-    return null;
   }
 
   loadFromLocalStorage();
