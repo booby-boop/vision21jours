@@ -116,8 +116,13 @@ document.addEventListener('DOMContentLoaded', () => {
       // restaurer données sauvegardées
       if (savedData?.days?.[i]) {
         const dayData = savedData.days[i];
-        if (dayData.type === 'emoji') contentEl.textContent = dayData.value;
-        if (dayData.type === 'color') box.style.background = dayData.value;
+        if (dayData.type === 'emoji') {
+          contentEl.textContent = dayData.value;
+        }
+        if (dayData.type === 'color') {
+          box.style.background = dayData.value;
+          updateBoxAppearance(box); // <-- fix : la couleur s'affiche correctement
+        }
         box.dataset.type = dayData.type || '';
         box.dataset.value = dayData.value || '';
       }
