@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let emojiEditor = document.getElementById('emojiEditor');
   let colorEditor = document.getElementById('colorEditor');
 
+  // initial node lists (on load)
   let emojiInputs = Array.from(document.querySelectorAll('.emoji-input'));
   let colorPickers = Array.from(document.querySelectorAll('.color-picker'));
 
@@ -38,11 +39,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // --- helpers pour garder les nodeLists à jour ---
+  function refreshPaletteReferences() {
+    emojiInputs = Array.from(document.querySelectorAll('.emoji-input'));
+    colorPickers = Array.from(document.querySelectorAll('.color-picker'));
+  }
+
   // --- Affichage éditeurs ---
   function showEditors() {
     const mode = document.querySelector('input[name="mode"]:checked')?.value || '';
-    emojiEditor.classList.toggle('hidden', !(mode === 'emoji' || mode === 'both'));
-    colorEditor.classList.toggle('hidden', !(mode === 'color' || mode === 'both'));
+    // si l'éditeur original a été remplacé par un overlay, on laisse le comportement existant
+    if (emojiEditor) emojiEditor.classList.toggle('hidden', !(mode === 'emoji' || mode === 'both'));
+    if (colorEditor) colorEditor.classList.toggle('hidden', !(mode === 'color' || mode === 'both'));
   }
   radioEls.forEach(r => r.addEventListener('change', showEditors));
   showEditors();
@@ -50,18 +58,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Mise à jour apparence d'une box ---
   function updateBoxAppearance(box) {
     const contentEl = box.querySelector('.mainContent');
-    const txt = box.dataset.emoji || '';
-    const isEmoji = txt.length > 0;
+    const emoji = box.dataset.emoji || '';
+    const color = box.dataset.color || '';
 
     if (contentEl) {
-      contentEl.textContent = box.dataset.emoji || '';
+      contentEl.textContent = emoji;
+      const isEmoji = emoji.length > 0;
       contentEl.style.fontSize = isEmoji ? '34px' : '14px';
       contentEl.style.lineHeight = isEmoji ? '1' : '1.1';
+      contentEl.style.display = 'block';
+      contentEl.style.textAlign = 'center';
+      contentEl.style.width = '100%';
     }
 
-    box.style.background = box.dataset.color || 'white';
+    // appliquer la couleur (ou blanc par défaut)
+    box.style.background = color || 'white';
 
-    if (box.dataset.color && box.dataset.color !== 'white' && box.dataset.color !== '#ffffff') {
+    if (color && color.toLowerCase() !== 'white' && color !== '#ffffff') {
       box.classList.add('colored');
       box.style.color = '#fff';
     } else {
@@ -71,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function isPaletteFilled() {
+    refreshPaletteReferences();
     return emojiInputs.some(i => i.value.trim() !== '') || colorPickers.some(c => c.value.trim() !== '');
   }
 
@@ -87,9 +101,25 @@ document.addEventListener('DOMContentLoaded', () => {
     let startDate = null;
     if (savedData?.startDate) {
       startDate = parseDate(savedData.startDate);
-      startDateEl.value = formatDateForInput(startDate);
+      if (startDate) startDateEl.value = formatDateForInput(startDate);
     } else if (startDateEl.value) {
       startDate = parseDate(startDateEl.value);
+    }
+
+    // if saved palettes exist, restore them into editors BEFORE creating overlays
+    if (savedData) {
+      // Ensure we still have original editors in DOM before setting values
+      // (some code paths may have replaced them)
+      // If editors were replaced, try to re-insert original DOM from current page (we assume initial HTML present)
+      // For robustness, just write values to any matching inputs on page.
+      const savedEmojis = savedData.emojiInputs || [];
+      const savedColors = savedData.colorPickers || [];
+      refreshPaletteReferences();
+      emojiInputs.forEach((inp, idx) => { inp.value = savedEmojis[idx] ?? inp.value; });
+      colorPickers.forEach((p, idx) => { p.value = savedColors[idx] ?? p.value; });
+
+      // re-refresh refs in case DOM changed
+      refreshPaletteReferences();
     }
 
     for (let i = 0; i < DAYS; i++) {
@@ -121,6 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dayData = savedData.days[i];
         box.dataset.emoji = dayData.emoji || '';
         box.dataset.color = dayData.color || '';
+        // update immédiatement pour que l'apparence prenne en compte couleur+emoji
         updateBoxAppearance(box);
       }
 
@@ -145,40 +176,47 @@ document.addEventListener('DOMContentLoaded', () => {
 
     removeOverlays();
 
-    // --- restaurer palettes personnalisées ---
-    if (savedData) {
-      emojiInputs.forEach((inp, idx) => {
-        inp.value = savedData.emojiInputs?.[idx] || inp.value;
-      });
-      colorPickers.forEach((p, idx) => {
-        p.value = savedData.colorPickers?.[idx] || p.value;
-      });
-    }
+    // --- restaurer palettes personnalisées & rebuild overlays from current inputs ---
+    refreshPaletteReferences();
 
     const mode = savedData?.mode || document.querySelector('input[name="mode"]:checked')?.value || '';
     if (mode === 'emoji' || mode === 'both') overlayEmoji();
     if (mode === 'color' || mode === 'both') overlayColor();
 
+    // attacher listeners (emojis editors + color editors)
     attachInputListeners();
+    attachPaletteEditListeners(); // pour sauvegarder quand on modifie une palette
+
     generateBtn.textContent = 'Réinitialiser';
 
     saveToLocalStorage(mode);
   }
 
+  // --- Overlay emojis ---
   function overlayEmoji() {
+    // create overlay with responsive sizing and centered content
     const overlay = document.createElement('div');
     overlay.id = 'emojiPaletteOverlay';
     overlay.className = 'editor-row';
+
+    refreshPaletteReferences();
     emojiInputs.forEach(inp => {
       if (!inp.value) return;
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'emoji-btn quick-palette';
+      // responsive sizing: based on viewport width, but capped
+      const base = Math.max(34, Math.min(48, Math.floor(window.innerWidth * 0.08)));
       btn.style.width = '68px';
       btn.style.height = '68px';
+      btn.style.minWidth = '48px';
       btn.style.borderRadius = '12px';
       btn.style.border = '4px solid transparent';
-      btn.style.fontSize = '34px';
+      btn.style.display = 'flex';
+      btn.style.alignItems = 'center';
+      btn.style.justifyContent = 'center';
+      btn.style.fontSize = `${base}px`;
+      btn.style.lineHeight = '1';
       btn.textContent = inp.value;
       btn.addEventListener('click', () => {
         if (!currentDay) return alert('Clique d\'abord sur un jour.');
@@ -188,14 +226,25 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       overlay.appendChild(btn);
     });
-    emojiEditor.replaceWith(overlay);
+
+    // if original emojiEditor exists in DOM, replace it, else append near top of form
+    if (emojiEditor && emojiEditor.parentNode) {
+      emojiEditor.replaceWith(overlay);
+    } else {
+      // fallback: try to insert after configForm actions
+      const actions = configForm.querySelector('.actions');
+      if (actions) actions.insertAdjacentElement('afterend', overlay);
+    }
     emojiEditor = document.getElementById('emojiPaletteOverlay');
   }
 
+  // --- Overlay couleurs ---
   function overlayColor() {
     const overlay = document.createElement('div');
     overlay.id = 'colorPaletteOverlay';
     overlay.className = 'editor-row';
+
+    refreshPaletteReferences();
     colorPickers.forEach(p => {
       if (!p.value) return;
       const btn = document.createElement('button');
@@ -203,9 +252,13 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.className = 'color-btn quick-palette';
       btn.style.width = '68px';
       btn.style.height = '68px';
+      btn.style.minWidth = '48px';
       btn.style.borderRadius = '12px';
       btn.style.border = '4px solid transparent';
       btn.style.background = p.value;
+      btn.style.display = 'flex';
+      btn.style.alignItems = 'center';
+      btn.style.justifyContent = 'center';
       btn.addEventListener('click', () => {
         if (!currentDay) return alert('Clique d\'abord sur un jour.');
         currentDay.dataset.color = p.value;
@@ -214,7 +267,13 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       overlay.appendChild(btn);
     });
-    colorEditor.replaceWith(overlay);
+
+    if (colorEditor && colorEditor.parentNode) {
+      colorEditor.replaceWith(overlay);
+    } else {
+      const actions = configForm.querySelector('.actions');
+      if (actions) actions.insertAdjacentElement('afterend', overlay);
+    }
     colorEditor = document.getElementById('colorPaletteOverlay');
   }
 
@@ -223,8 +282,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (oldEmojiOverlay) oldEmojiOverlay.remove();
     const oldColorOverlay = document.getElementById('colorPaletteOverlay');
     if (oldColorOverlay) oldColorOverlay.remove();
+    // try to reset references back to originals if they exist in DOM
+    emojiEditor = document.getElementById('emojiEditor') || emojiEditor;
+    colorEditor = document.getElementById('colorEditor') || colorEditor;
+    refreshPaletteReferences();
   }
 
+  // --- Capture ---
   async function captureGrid() {
     if (!gridGenerated) return alert('Génère la grille d\'abord.');
     try {
@@ -240,6 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // --- Réinitialisation ---
   function resetApp() {
     localStorage.removeItem('vision21Data');
     location.reload();
@@ -255,7 +320,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  // --- Inputs directs sur la grille (emoji inputs & color pickers) ---
   function attachInputListeners() {
+    // refresh references before attaching
+    refreshPaletteReferences();
+
+    // remove previous listeners by cloning nodes (cheap way) to avoid duplicates
+    emojiInputs = emojiInputs.map(inp => {
+      const clone = inp.cloneNode(true);
+      inp.parentNode.replaceChild(clone, inp);
+      return clone;
+    });
+
+    colorPickers = colorPickers.map(p => {
+      const clone = p.cloneNode(true);
+      p.parentNode.replaceChild(clone, p);
+      return clone;
+    });
+
+    // attach event listeners that set the currently selected day content/color
     emojiInputs.forEach(inp => {
       inp.addEventListener('input', ev => {
         if (!currentDay) return;
@@ -266,19 +349,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     colorPickers.forEach(p => {
-      p.addEventListener('input', () => {
+      p.addEventListener('input', ev => {
         if (!currentDay) return;
-        currentDay.dataset.color = p.value || '';
+        currentDay.dataset.color = ev.target.value || '';
         updateBoxAppearance(currentDay);
         saveToLocalStorage(document.querySelector('input[name="mode"]:checked')?.value || 'both');
       });
     });
   }
 
-  attachInputListeners();
-  captureBtn.addEventListener('click', captureGrid);
+  // --- Sauvegarder quand on modifie la palette elle-même (éditeur) ---
+  function attachPaletteEditListeners() {
+    refreshPaletteReferences();
+    // palette edits: save emoji editor inputs and color pickers values to localStorage
+    emojiInputs.forEach(i => {
+      // ensure we don't double attach
+      i.removeEventListener('change', onPaletteEdit);
+      i.addEventListener('change', onPaletteEdit);
+      i.removeEventListener('input', onPaletteEdit);
+      i.addEventListener('input', onPaletteEdit);
+    });
+    colorPickers.forEach(c => {
+      c.removeEventListener('change', onPaletteEdit);
+      c.addEventListener('change', onPaletteEdit);
+      c.removeEventListener('input', onPaletteEdit);
+      c.addEventListener('input', onPaletteEdit);
+    });
+    function onPaletteEdit() {
+      // simply persist palettes + current days
+      saveToLocalStorage(document.querySelector('input[name="mode"]:checked')?.value || 'both');
+    }
+  }
 
+  // --- LocalStorage ---
   function saveToLocalStorage(mode = null) {
+    refreshPaletteReferences();
     const data = {
       startDate: startDateEl.value || null,
       days: dayBoxes.map(b => ({ emoji: b.dataset.emoji || '', color: b.dataset.color || '' })),
@@ -291,10 +396,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function loadFromLocalStorage() {
     const data = localStorage.getItem('vision21Data');
-    if (data) createGrid(JSON.parse(data));
+    if (data) {
+      try {
+        const parsed = JSON.parse(data);
+        createGrid(parsed);
+      } catch (e) {
+        console.error('Erreur parse localStorage', e);
+      }
+    }
   }
 
+  // --- Utils ---
   function formatDateForInput(date) {
+    if (!date) return '';
     const day = String(date.getDate()).padStart(2, '0');
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
@@ -302,8 +416,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function parseDate(input) {
+    if (!input) return null;
+    // try ISO parse first
     let d = new Date(input);
     if (!isNaN(d.getTime())) return d;
+    // try dd/mm/yyyy
     const parts = input.split('/');
     if (parts.length === 3) {
       d = new Date(`${parts[2]}-${parts[1]}-${parts[0]}`);
@@ -312,5 +429,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return null;
   }
 
+  // initial load
   loadFromLocalStorage();
+
+  // ensure palettes editors listen to changes even before grid generation
+  attachPaletteEditListeners();
 });
